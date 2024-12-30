@@ -1,0 +1,22 @@
+{
+  "name": "lenscrawling",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "type-fest": "^4.31.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.13",
+    "chrome-types": "^0.1.327",
+    "vite": "^6.0.6"
+  }
+}
