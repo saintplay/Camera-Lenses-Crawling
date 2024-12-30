@@ -1,8 +1,33 @@
 <html>
+  <style>
+    body, html {
+      width: 600px;
+      height: 150px;
+    }
+
+    .hidden {
+      visibility: hidden;
+    }
+    .visible {
+      visibility: visible;
+    }
+  </style>
   <body>
     <h1>Lens Spec Crawler</h1>
-	<button id="crawl-specs-button">Get Specs</button>
+    <div style="padding: 12px">
+      <button id="crawl-specs-button">Get Specs</button>
+  
+      <div id="crawl-results-sucess-wrapper" class="hidden" style="margin: 12px 0;">
+        <h3 style="margin-bottom: 8px;">Results</h3>
+        <pre id="crawl-results-success"></pre>
+      </div>
+      
+      <div id="crawl-results-error-wrapper" class="hidden" style="margin: 12px 0;">
+        <h3 style="margin-bottom: 8px;">Error</h3>
+        <pre id="crawl-results-error"></pre>
+      </div>
+    </div>
 
-  <script src="dist/popup.js"></script>
+    <script src="dist/popup.js"></script>
 </body>
 </html>

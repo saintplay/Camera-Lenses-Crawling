@@ -232,21 +232,6 @@ function getApertureDescriptor(apertureLimit: ApertureLimit) {
     return `f/${apertureLimit[0]} - f/${apertureLimit[1]}`;
 }
 
-function convertToTableDiff(expectedResult: string, givenResult: string) {
-    const expectedArray = expectedResult.split('\t');
-    const givenArray = givenResult.split('\t');
-
-    const diffTable: [string, string | undefined][] = [];
-
-    expectedArray.forEach((descriptor, index) => {
-        if (descriptor !== givenArray[index]) {
-            diffTable.push([descriptor, givenArray[index]])
-        }
-    })
-
-    return diffTable;
-}
-
 function getTabbedDescription() {
     const lensDescription = crawlLensDescription();
 
@@ -266,15 +251,51 @@ function getTabbedDescription() {
         lensDescription.buyingLink,
     ];
 
-    const result = resultArray.join('\t');
-    const expectedResult = `Tokina\tatx-i\tAPS-C (EF)\t11-20mm AF\tf/2.8\tf/22\t28\t82\t570\t399\t529\t\thttps://www.bhphotovideo.com/c/product/1571174-REG/tokina_atx_i_af120cfc_atx_i_11_20mm_f_2_8_cf.html`;
-
-    if (result === expectedResult) {
-        console.log('SUCCESS');
-        return;
-    }
-
-    console.table(convertToTableDiff(expectedResult, result));
+    return resultArray.join('\t');
 }
 
-getTabbedDescription();
+chrome.runtime.onMessage.addListener(
+    (message, _: chrome.runtime.MessageSender, __: () => void): undefined => {
+        const { type } = message;
+
+        if (!type || type !== "CRAWL_REQUEST") return;
+
+        try {
+            const result = getTabbedDescription();
+
+            console.log(result);
+
+            // Send results to popup
+            chrome.runtime.sendMessage({ type: "CRAWL_RESULTS_SUCCESS", data: result })
+
+            // Assert Results with simple sample
+            //const expectedResult = `Tokina\tatx-i\tAPS-C (EF)\t11-20mm AF\tf/2.8\tf/22\t28\t82\t570\t399\t529\t\thttps://www.bhphotovideo.com/c/product/1571174-REG/tokina_atx_i_af120cfc_atx_i_11_20mm_f_2_8_cf.html`;
+            //if (result === expectedResult) {
+            //console.log('SUCCESS');
+            //    return;
+            //}
+
+            //function convertToTableDiff(expectedResult: string, givenResult: string) {
+            //    const expectedArray = expectedResult.split('\t');
+            //    const givenArray = givenResult.split('\t');
+
+            //    const diffTable: [string, string | undefined][] = [];
+
+            //    expectedArray.forEach((descriptor, index) => {
+            //        if (descriptor !== givenArray[index]) {
+            //            diffTable.push([descriptor, givenArray[index]])
+            //        }
+            //    })
+
+            //    return diffTable;
+            //}
+
+            //console.table(convertToTableDiff(expectedResult, result));
+        } catch (error) {
+            console.error(error);
+
+            // Send error to popup
+            chrome.runtime.sendMessage({ type: "CRAWL_RESULTS_ERROR", data: String(error) })
+        }
+    }
+)
