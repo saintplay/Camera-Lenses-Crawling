@@ -27,9 +27,9 @@ export const SENSOR_COVERAGE_ALLOWLIST = keyedListToSortedAllowlist<SensorCovera
 
 export const LENS_MOUNTS = [
 	"M42",
+	"M39",
 	"PL",
 	"EF",
-	"EF-S",
 	"F",
 	"K",
 	"M",
@@ -40,6 +40,8 @@ export const LENS_MOUNTS = [
 	"EF-M",
 	"RF",
 	"MFT",
+	"T",
+	"CX",
 ] as const;
 
 export type LensMount = typeof LENS_MOUNTS[number];
@@ -51,19 +53,21 @@ export const LENS_MOUNT_DATA: {
 	}
 } = {
 	"M42": { technologies: ['SLR'] },
+	"M39": { technologies: ['SLR'] },
 	"PL": { technologies: ['SLR'] },
-	"EF": { technologies: ['SLR'] },
-	"EF-S": { technologies: ['SLR'] },
+	"EF": { technologies: ['SLR'], aliases: ['ef-s'] },
 	"F": { technologies: ['SLR'] },
 	"K": { technologies: ['SLR'] },
-	"M": { technologies: ['SLR'] },
-	"E": { technologies: ['mirrorless'] },
-	"X": { technologies: ['mirrorless'] },
+	"M": { technologies: ['SLR'], aliases: ['vm', 'leica m'] },
+	"E": { technologies: ['mirrorless'], aliases: ['fe', 'nex', 'nex-e'] },
+	"X": { technologies: ['mirrorless'], aliases: ["fujifilm x", 'fx'] },
 	"L": { technologies: ['mirrorless'] },
 	"Z": { technologies: ['mirrorless'] },
-	"EF-M": { technologies: ['mirrorless'] },
-	"RF": { technologies: ['mirrorless'] },
-	"MFT": { technologies: ['SLR', 'mirrorless'], aliases: ['M43'] },
+	"EF-M": { technologies: ['mirrorless'], aliases: ['eos-m'] },
+	"RF": { technologies: ['mirrorless'], aliases: ['eos-r', 'rf-s'] },
+	"MFT": { technologies: ['SLR', 'mirrorless'], aliases: ['m43'] },
+	"T": { technologies: ['SLR'] },
+	"CX": { technologies: ['SLR'], aliases: ['nikon-cx'] },
 }
 
 export const LENS_MOUNT_ALLOWLIST = keyedListToSortedAllowlist<LensMount>(LENS_MOUNT_DATA);

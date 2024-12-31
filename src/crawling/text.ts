@@ -1,5 +1,6 @@
 import { AllowList } from "../data/data";
 import { CrawlingBase, CrawlingCollection, CrawlingContext } from "./base";
+import { CrawlingDistance } from "./units";
 
 /**
  * Enforced to always have at least one non-empty character
@@ -81,7 +82,7 @@ export class CrawlingText<T extends string = string> extends CrawlingBase {
     }
 
 
-    extractWithAllowlist<K extends string = string>(allowlist: AllowList<K>) {
+    extractWithAllowlist<K extends string = string>(allowlist: AllowList<K>, matchWholeWords = false) {
         const lowercaseText = this._text.toLowerCase();
 
         const lowercaseFlattenAllowList = allowlist.map(i => [
@@ -91,7 +92,13 @@ export class CrawlingText<T extends string = string> extends CrawlingBase {
 
         for (const index in lowercaseFlattenAllowList) {
             const allowNameAndAliases = lowercaseFlattenAllowList[index]
-            const founded = allowNameAndAliases.find(txt => lowercaseText.includes(txt))
+
+            let founded: boolean;
+            if (matchWholeWords) {
+                founded = Boolean(allowNameAndAliases.find(txt => new RegExp(`\\b${txt}\\b`, 'gm').test(lowercaseText)))
+            } else {
+                founded = Boolean(allowNameAndAliases.find(txt => lowercaseText.includes(txt)))
+            }
 
             if (founded) {
                 // Use the original allowList since it was not transformed to lowercase
@@ -104,7 +111,10 @@ export class CrawlingText<T extends string = string> extends CrawlingBase {
 
     subtractLiterals(texts: string[]) {
         const reducedText = texts.reduce(
-            (acc, curr) => acc.replace(curr, ''),
+            (acc, curr) => {
+                const regExpEscapedText = curr.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+                return acc.replace(new RegExp(regExpEscapedText, 'gmi'), '')
+            },
             this._text
         )
 
@@ -113,6 +123,10 @@ export class CrawlingText<T extends string = string> extends CrawlingBase {
 
     matchesRegExp(regExp: RegExp) {
         return regExp.test(this._text)
+    }
+
+    toDistance() {
+        return CrawlingDistance.parseFromText(this._text, this._context);
     }
 
     toNumber() {

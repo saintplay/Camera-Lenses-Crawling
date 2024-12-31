@@ -6,11 +6,32 @@ const successResultEl = document.getElementById("crawl-results-success");
 const errorResultWrapperEl = document.getElementById("crawl-results-error-wrapper");
 const successResultWrapperEl = document.getElementById("crawl-results-sucess-wrapper");
 
-buttonEl?.addEventListener("click", () => {
-    chrome.tabs.query({currentWindow: true, active: true}).then(([tab]) => {
-        chrome.tabs.sendMessage(tab.id as number, { type: "CRAWL_REQUEST" });
+const disableFaiLFastOptionEls: NodeListOf<HTMLInputElement> = document.querySelectorAll(".options-container input[type=checkbox]");
+
+function sendMessageToCurrentTab(data: unknown) {
+    chrome.tabs.query({ currentWindow: true, active: true }).then(([tab]) => {
+        chrome.tabs.sendMessage(tab.id as number, data);
     });
+}
+
+
+buttonEl?.addEventListener("click", () => {
+    sendMessageToCurrentTab({ type: "CRAWL_REQUEST" });
 });
+
+disableFaiLFastOptionEls.forEach(optionEl => {
+    optionEl.addEventListener("change", (event) => {
+        const name = (event.currentTarget as HTMLInputElement)?.name;
+
+        sendMessageToCurrentTab({
+            type: "OPTION_CHANGED",
+            option: "DISABLE_FAIL_FAST",
+            field: name,
+            value: optionEl.checked
+        })
+    })
+});
+
 
 chrome.runtime.onMessage.addListener(
     (message, _: chrome.runtime.MessageSender, __: () => void): undefined => {
