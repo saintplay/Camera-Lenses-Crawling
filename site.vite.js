@@ -5,11 +5,11 @@ export default defineConfig({
 	build: {
 		minify: false,
 		lib: {
-			entry: [
-				resolve(__dirname, 'src/main.ts'),
-				resolve(__dirname, 'src/popup.ts')
-			],
-			formats: ['cjs']
-		}
+			entry: resolve(__dirname, 'src/site.ts'),
+			name: 'Site Script',
+			fileName: 'site',
+			formats: ['umd'],
+		},
+		emptyOutDir: false
 	},
   })

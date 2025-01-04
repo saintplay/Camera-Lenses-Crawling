@@ -10,8 +10,11 @@
 	},
 	"content_scripts": [
 		{
-			"matches": ["https://*.bhphotovideo.com/*"],
-			"js": ["dist/main.js"]
+			"matches": [
+				"https://*.bhphotovideo.com/*",
+				"https://*.fujifilm-x.com/*"
+			],
+			"js": ["dist/site.umd.js"]
 		}
 	]
   }
