@@ -9,9 +9,6 @@ lerna-debug.log*
 
 node_modules
 dist/*
-!dist/icon.png
-!dist/manifest.json
-!dist/popup.html
 dist-ssr
 *.local
 

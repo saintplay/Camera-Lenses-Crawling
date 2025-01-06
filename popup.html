@@ -1,71 +1,20 @@
-<html>
-  <style>
-    body, html {
-      width: 600px;
-      height: 180px;
-    }
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lens Crawling</title>
 
-    .hidden {
-      visibility: hidden;
-    }
-    .visible {
-      visibility: visible;
-    }
-
-    .options-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10%;
-    }
-  </style>
+    <style>
+      body, html {
+        width: 600px;
+        height: 500px;
+      }
+    </style>
+  </head>
 
   <body>
-    <h1>Lens Spec Crawler</h1>
-    <div style="padding: 12px">
-      <button id="crawl-specs-button">Get Specs</button>
-  
-      <div id="crawl-results-sucess-wrapper" class="hidden" style="margin-top: 12px 0;">
-        <h3 style="margin-bottom: 8px;">Results</h3>
-        <pre id="crawl-results-success"></pre>
-
-        <div style="margin-top: 6px 0;">
-          <button id="copy-results-button">Copy</button>
-        </div>
-      </div>
-
-      
-      <div id="crawl-results-error-wrapper" class="hidden" style="margin-top: 12px 0;">
-        <h3 style="margin-bottom: 8px;">Error</h3>
-        <pre id="crawl-results-error"></pre>
-      </div>
-
-      <div style="margin-top: 12px 0;">
-        <h3 style="margin-bottom: 8px;">Disable fail fast on:</h3>
-        <div class="options-container">
-          <div>
-            <input type="checkbox" name="weightGR" />
-            <label for="weightGR">Weight</label>
-          </div>
-          <div>
-            <input type="checkbox" name="currentPrice" />
-            <label for="currentPrice">Price</label>
-          </div>
-          <div>
-            <input type="checkbox" name="sensorCoverage" />
-            <label for="sensorCoverage">Sensor Coverage</label>
-          </div>
-          <div>
-            <input type="checkbox" name="OIS" />
-            <label for="OIS">OIS</label>
-          </div>
-          <div>
-            <input type="checkbox" name="minimumAperture" />
-            <label for="minimumAperture">Min Aperture</label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script src="dist/popup.umd.js"></script>
+    <div id="app"></div>
+    <script type="module" src="src/popup/popup.ts"></script>
 </body>
 </html>

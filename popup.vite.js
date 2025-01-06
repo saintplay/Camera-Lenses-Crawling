@@ -1,15 +1,16 @@
 const { resolve } = require('path')
 const { defineConfig } = require('vite')
+const vue = require('@vitejs/plugin-vue')
 
 export default defineConfig({
+	plugins: [vue()],
 	build: {
-		minify: false,
-		lib: {
-			entry: resolve(__dirname, 'src/popup/popup.ts'),
-			name: 'Popup Script',
-			fileName: 'popup',
-			formats: ['umd'],
+		rollupOptions: {
+			input: {
+				app: resolve(__dirname, 'popup.html')
+			}
 		},
 		emptyOutDir: false
 	},
+	base: './'
   })
