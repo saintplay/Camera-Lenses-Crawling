@@ -61,7 +61,7 @@ export const BRANDS_DATA: {
 			"XC": {},
 			"MKX": {},
 		},
-		aliases: ['fuji']
+		aliases: ['fuji', 'fujinon']
 	},
 	"IRIX": {
 		lines: {
