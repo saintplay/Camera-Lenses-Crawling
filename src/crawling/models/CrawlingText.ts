@@ -1,5 +1,5 @@
 import { AllowList } from "../../data/data";
-import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext } from "./CrawlingBase";
+import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
 import { CrawlingBoolean } from "./CrawlingBoolean";
 import { CrawlingNumber } from "./CrawlingNumber";
 import { CrawlingDistance } from "./CrawlingUnit";
@@ -8,7 +8,7 @@ import { CrawlingDistance } from "./CrawlingUnit";
  * Enforced to always have at least one non-empty character
  */
 export class CrawlingText<TextType extends string = string> extends CrawlingBase<TextType> {
-    protected constructor(property: CrawleableProperty<TextType>, context: CrawlingContext) {
+    constructor(property: CrawleableProperty<TextType>, context: CrawlingContext) {
         super(property, context);
 
         if (property.success && property.value.trim() === '') {
@@ -18,11 +18,15 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
 
     static createWithValue<T extends string = string>(value: T, context: CrawlingContext) {
         return CrawlingText.baseCreateWithValue<T>(value, context) as CrawlingText<T>;
-	}
+    }
 
-	static createWithError<T extends string = string>(error: string, context: CrawlingContext) {
+    static createWithError<T extends string = string>(error: string, context: CrawlingContext) {
         return CrawlingText.baseCreateWithError<T>(error, context) as CrawlingText<T>;
-	}
+    }
+
+    static createFromBase<T extends string = string>(crawl: CrawlingBase<T>) {
+        return new CrawlingText(crawl._property, crawl._context);
+    }
 
     extractWithRegExp(regExp: RegExp, groupIndexing: number): CrawlingText;
     extractWithRegExp(regExp: RegExp, groupIndexing: number[]): CrawlingTexts;
@@ -82,20 +86,28 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
 
         for (const [regExp, groupIndexing] of regExps) {
             const resultTextContent = this.extractWithRegExp(regExp, groupIndexing) // TS Problem: This could be number or number[]. But for compilation let's just stick to one of them.
-            if (resultTextContent) return resultTextContent
-        }
 
+            if (resultTextContent._property.success) return resultTextContent;
+        }
 
         return CrawlingTexts.createWithError(`text ${this._property.value} did not match with any regexp`, this._context);
     }
 
 
-    extractWithAllowlist<K extends string = string>(allowlist: AllowList<K>, matchWholeWords = false): CrawlingText<K> {
+    extractWithAllowlist<K extends string = string>(allowlist: AllowList<K> | CrawlingBase<AllowList<K>>, matchWholeWords = false): CrawlingText<K> {
         if (!this._property.success) return CrawlingText.createWithError(this._property.error, this._context);
+
+        if (allowlist instanceof CrawlingBase) {
+            if (!allowlist._property.success) return CrawlingText.createWithError(allowlist._property.error, allowlist._context);
+        }
+
+        const actualAllowlist = allowlist instanceof CrawlingBase ?
+            (allowlist as EnsuredSuccess<typeof allowlist, AllowList<K>>)._property.value :
+            allowlist;
 
         const lowercaseText = this._property.value.toLowerCase();
 
-        const lowercaseFlattenAllowList = allowlist.map(i => [
+        const lowercaseFlattenAllowList = actualAllowlist.map(i => [
             i.name.toLowerCase(),
             ...(i.aliases ? i.aliases.map(a => a.toLowerCase()) : [])
         ])
@@ -112,17 +124,25 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
 
             if (founded) {
                 // Use the original allowList since it was not transformed to lowercase
-                return CrawlingText.createWithValue<K>(allowlist[index].name, this._context)
+                return CrawlingText.createWithValue<K>(actualAllowlist[index].name, this._context)
             }
         }
 
         return CrawlingText.createWithError('element not found with allowlist', this._context);
     }
 
-    subtractLiterals(texts: string[]): CrawlingText {
+    subtractLiterals(texts: string[] | CrawlingCollection<string>): CrawlingText {
         if (!this._property.success) return CrawlingText.createWithError(this._property.error, this._context);
 
-        const reducedText = texts.reduce(
+        if (texts instanceof CrawlingCollection) {
+            if (!texts._property.success) return CrawlingText.createWithError(texts._property.error, texts._context);
+        }
+
+        const textsToSubstract = texts instanceof CrawlingCollection ?
+            (texts as EnsuredSuccess<typeof texts, string[]>)._property.value :
+            texts;
+
+        const reducedText = textsToSubstract.reduce(
             (acc, curr) => {
                 const regExpEscapedText = curr.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
                 return acc.replace(new RegExp(regExpEscapedText, 'gmi'), '')
@@ -167,11 +187,17 @@ export class CrawlingTexts extends CrawlingCollection<string> {
 
     static createWithValue(value: string[], context: CrawlingContext) {
         return CrawlingTexts.baseCreateWithValue(value, context) as CrawlingTexts;
-	}
+    }
 
-	static createWithError(error: string, context: CrawlingContext) {
+    static createWithError(error: string, context: CrawlingContext) {
         return CrawlingTexts.baseCreateWithError(error, context) as CrawlingTexts;
-	}
+    }
 
-    foo() {}
+    getFirst() {
+        return super.getFirst(CrawlingText) as CrawlingText;
+    }
+
+    getItem(index: number) {
+        return super.getItem(index) as CrawlingText;
+    }
 }

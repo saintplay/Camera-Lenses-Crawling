@@ -42,8 +42,8 @@ export class CrawlingDistance extends CrawlingBase<Distance> {
 		const validCaptures: CrawlingNumber[] = []
 
 		if (centimetersCapture._property.success) validCaptures.push(centimetersCapture);
-		if (!metersCapture._property.success) validCaptures.push(metersCapture);
-		if (!milimetersCapture._property.success) validCaptures.push(milimetersCapture);
+		if (metersCapture._property.success) validCaptures.push(metersCapture);
+		if (milimetersCapture._property.success) validCaptures.push(milimetersCapture);
 
 		if (validCaptures.length === 0) {
 			return CrawlingDistance.createWithError(`text "${text}" did not match with any unit`, context)

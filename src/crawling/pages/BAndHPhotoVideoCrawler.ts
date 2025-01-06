@@ -1,10 +1,11 @@
-import { AllowListItem, keyedListToSortedAllowlist } from "../../data/data";
+import { keyedListToSortedAllowlist } from "../../data/data";
 import { BRANDS_DATA, LENS_BRANDS_ALLOWLIST, LensBrand } from "../../data/lens-brands";
-import { LENS_MOUNT_ALLOWLIST, SENSOR_COVERAGE_ALLOWLIST } from "../../data/optics";
-import { CrawleableLensDescription, FocalLength, MountSensorOption } from "../../types";
-import { CrawleableProperty, CrawlingBase, CrawlingCollection } from "../models/CrawlingBase";
+import { LENS_MOUNT_ALLOWLIST, LensMount, SENSOR_COVERAGE_ALLOWLIST, SensorCoverage } from "../../data/optics";
+import { ApertureLimit, CrawleableLensDescription, FocalLength, MountSensorOption } from "../../types";
+import { CrawlingBase } from "../models/CrawlingBase";
 import { CrawlingElements } from "../models/CrawlingDom";
 import { CrawlingText } from "../models/CrawlingText";
+import { PageCrawler } from "./PageCrawler";
 
 // TODO: Move crawling logic from main.ts here
 export class BAndHPhotoVideoCrawler extends PageCrawler {
@@ -21,15 +22,12 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 				return keyedListToSortedAllowlist(BRANDS_DATA[brand._property.value].lines)
 			})
 
-
 		const line = CrawlingElements
 			.getBySelector('[data-selenium=productTitle]', 'line')
 			.getFirst()
 			.getTextContent()
 			.subtractLiterals(brand.toCollection())
-			.extractWithAllowlist(linesAllowlist) as CrawlingText // BCOMMIT
-
-
+			.extractWithAllowlist(linesAllowlist)
 
 		const tableSensorCoverage = CrawlingElements
 			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'table sensorCoverage')
@@ -38,15 +36,16 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getTextContent()
 			.extractWithAllowlist(SENSOR_COVERAGE_ALLOWLIST)
 
-		const bulletPointSensorCoverage = CrawlingElements
-			.getBySelector('BCOMMIT', 'bullet point sensorCoverage')
-			.findByTextContent(/BCOMMIT/)
-			.getTextContent()
-			.extractWithRegExp(/BCOMMIT/, 1)
+		//const bulletPointSensorCoverage = CrawlingElements
+		//	.getBySelector('BCOMMIT', 'bullet point sensorCoverage')
+		//	.findByTextContent(/BCOMMIT/)
+		//	.getTextContent()
+		//	.extractWithRegExp(/BCOMMIT/, 1)
 
+		//const sensorCoverage = CrawlingBase
+		//	.useFirst([tableSensorCoverage, bulletPointSensorCoverage], { throwIfDifferentValues: true });
 
-		const sensorCoverage = CrawlingBase
-			.useFirst([tableSensorCoverage, bulletPointSensorCoverage], { throwIfDifferentValues: true });
+		const sensorCoverage = tableSensorCoverage;
 
 		const tableLensMount = CrawlingElements
 			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'lensMount')
@@ -55,14 +54,18 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getTextContent()
 			.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true)
 
-		const otherLensMounts = CrawlingElements
-			.getBySelector('BCOMMIT', 'other lens mounts')
-			.map<CrawlingText>((element) => element.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true))
+		//const otherLensMounts = CrawlingElements
+		//	.getBySelector('BCOMMIT', 'other lens mounts')
+		//	.map<CrawlingText>((element) => element.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true))
+
+		//const mountSensorOptions = CrawlingBase
+		//	.unionByValue([tableLensMount.toCollection(), otherLensMounts])
+		//	.map<CrawleableProperty<MountSensorOption>>((lensMount) =>
+		//		CrawlingBase.baseCreateWithValue({ sensorCoverage, lensMount } as MountSensorOption), CrawlingBase.getMergedContexts([sensorCoverage, lensMount]))
 
 		const mountSensorOptions = CrawlingBase
-			.unionByValue([tableLensMount.toCollection(), otherLensMounts])
-			.map<CrawleableProperty<MountSensorOption>>((lensMount) => CrawlingObject.create({ sensorCoverage, lensMount }))
-
+			.make<[SensorCoverage, LensMount]>([sensorCoverage, tableLensMount])
+			(([coverage, mount]): MountSensorOption[] => [{ sensorCoverage: coverage._property.value, lensMount: mount._property.value }])
 
 		const focalLength = CrawlingElements
 			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'focalLength')
@@ -77,31 +80,155 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 				// Sample: 28 to 70mm
 				[/^(\d+) to (\d+)mm/gm, [1, 2]]
 			])
+			.map<number>((textContent) => CrawlingText.createFromBase(textContent).toNumber())
 			.ifElse<FocalLength>(
 				textContents => textContents._property.value.length == 2,
 				(textContents) => {
 					const [minLength, maxLength] = textContents._property.value
 
-					return CrawlingBase.createBcommit<FocalLength>({
+					return {
 						type: 'zoom',
 						minLength,
 						maxLength,
-					}, textContents._context)
+					}
 				},
-				(textContents): FocalLength => {
-					const focalLength = textContents.getFirst();
+				(textContents) => {
+					const [focalLength] = textContents._property.value
+
 					return {
 						type: 'prime',
-						length: focalLength.toNumber()
+						length: focalLength
 					}
 				},
 			)
+
+		const minimumAperture = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'minimumAperture')
+			.findByTextContent(/^Minimum Aperture$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			.extractWithMultipleRegExp([
+				// Sample: f/22
+				[/^f\/(\d+(?:\.\d+)?)$/gm, [1]],
+				// Sample: f/22 to 40
+				[/^f\/(\d+(?:\.\d+)?)(:? to (\d+(?:\.\d+)?))?$/gm, [1, 3]]
+			])
+			.map<number>((textContent) => CrawlingText.createFromBase(textContent).toNumber())
+			.ifElse<ApertureLimit>(
+				textContents => textContents._property.value.length === 2,
+				(textContents) => {
+					const [lowerAperture, upperAperture] = textContents._property.value;
+					return [lowerAperture, upperAperture]
+				},
+				(textContents) => {
+					const [aperture] = textContents._property.value;
+					return aperture;
+				},
+			)
+
+		const maximumAperture = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'maximumAperture')
+			.findByTextContent(/^Maximum Aperture$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			.extractWithMultipleRegExp([
+				// Sample: f/2.8
+				[/^f\/(\d+(?:\.\d+)?)$/gm, [1]],
+				// Sample: f/2.8 to 4
+				[/^f\/(\d+(?:\.\d+)?)(:? to (\d+(?:\.\d+)?))?$/gm, [1, 3]]
+			])
+			.map<number>((textContent) => CrawlingText.createFromBase(textContent).toNumber())
+			.ifElse<ApertureLimit>(
+				textContents => textContents._property.value.length === 2,
+				(textContents): ApertureLimit => {
+					const [lowerAperture, upperAperture] = textContents._property.value;
+					return [lowerAperture, upperAperture]
+				},
+				(textContents): ApertureLimit => {
+					const [aperture] = textContents._property.value;
+					return aperture;
+				},
+			)
+
+		const minimumFocusDistanceCM = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'minimumFocusDistanceCM')
+			.findByTextContent(/^Minimum Focus Distance$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			// Sample: 11.8" / 0.3 m
+			// Sample: 11.02" / 28 cm
+			.extractWithRegExp(/\/ (\d+(?:\.\d+)?\s[cm]?m)$/gm, 1)
+			.toDistance()
+			.toCentimetersValue()
+
+		const af = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'AF')
+			.findByTextContent(/^Focus Type$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			.matchesRegExp(/Autofocus/gm)
+
+		const ois = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'OIS')
+			.findByTextContent(/^Image Stabilization$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			.matchesRegExp(/Yes/gm)
+
+		const filterSize = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'filterSize')
+			.findByTextContent(/^Filter Size$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			// Sample: 82 mm (Front)
+			// Sample: 35.5 mm (Front)
+			.extractWithRegExp(/^(\d+(?:\.\d+)?) mm/gm, 1)
+			.toNumber();
+
+		const weightGR = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'weightGR')
+			.findByTextContent(/^Weight$/gm)
+			.getNextElementSibiling()
+			.getTextContent()
+			.extractWithRegExp(/\/ (\d+(?:\.\d+)?)\s\g$/gm, 1) // Sample: 1.25 lb / 570 g
+			.toNumber();
+
+		const currentPrice = CrawlingElements
+			.getBySelector('[data-selenium=pricingPrice]', 'currentPrice')
+			.getFirst()
+			.getTextContent()
+			.subtractLiterals([','])
+			// Sample: USD$374.00
+			// Sample: $300.00
+			// Sample: USD$1,119.95
+			.extractWithRegExp(/\$(\d+(?:\.\d+)?)$/gm, 1)
+			.toNumber();
+
+		const fullPrice = CrawlingElements
+			.getBySelector('[data-selenium=strikeThroughPrice]', 'fullPrice')
+			.getFirst()
+			.getTextContent()
+			.subtractLiterals([','])
+			// Sample: Price USD $1,299.00
+			// Sample: Price $300.00
+			.extractWithRegExp(/\$(\d+(?:\.\d+)?)$/gm, 1)
+			.toNumber();
 
 		return {
 			brand: brand.toResult(),
 			line: line.toResult(),
 			mountSensorOptions: mountSensorOptions.toResult(),
 			focalLength: focalLength.toResult(),
+			minimumAperture: minimumAperture.toResult(),
+			maximumAperture: maximumAperture.toResult(),
+			minimumFocusDistanceCM: minimumFocusDistanceCM.toResult(),
+			AF: af.toResult(),
+			OIS: ois.toResult(),
+			filterSize: filterSize.toResult(),
+			weightGR: weightGR.toResult(),
+			currentPrice: currentPrice.toResult(),
+			fullPrice: fullPrice.toResult(),
+			buyingLink: { success: true, value: window.location.href },
 		}
 
 	}

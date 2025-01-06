@@ -68,6 +68,10 @@ export class CrawlingElements extends CrawlingCollection<Element> {
     }
 
     getFirst() {
-        return super.getFirst() as CrawlingElement;
+        return super.getFirst(CrawlingElement) as CrawlingElement;
+    }
+
+    getItem(index: number) {
+        return super.getItem(index) as CrawlingElement;
     }
 }

@@ -47,7 +47,8 @@ listenToEvents((event) => {
                 successResultEl.innerText = getTabbedDescription(lensDesription);
             }
     
-            // Todo: If there is lacking information, request more information from other tabs
+            // TODO: Make the check for this
+            // If there is lacking information, request more information from other tabs
             sendMessageToAllTabs({ type: "MORE_CRAWL", lensIdentifier: {} as BasicLensIdentifier, requestId })
         } else {
             const { error } = event
@@ -63,5 +64,6 @@ listenToEvents((event) => {
         
     }
     else if (type === "MORE_CRAWL_RESPONSE") {
+        // TODO: Handle this
     }
 })

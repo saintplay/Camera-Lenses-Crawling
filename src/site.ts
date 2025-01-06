@@ -1,3 +1,4 @@
+import { crawlLensDescription } from './crawling/crawling';
 import { listenToEvents, sendMessageToExtension } from './events';
 
 interface CrawlingOptions {
@@ -42,6 +43,7 @@ listenToEvents((event) => {
             console.log("Lens Specs Info Crawled");
             console.log(lensDesription);
 
+            FULFILLED_REQUEST_IDS[newRequestId] = true;
 
             sendMessageToExtension({ type: "CRAWL_RESPONSE", success: true, lensDesription, requestId: newRequestId })
         } catch (error) {

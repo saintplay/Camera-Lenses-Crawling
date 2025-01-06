@@ -18,6 +18,10 @@ type MapToSucessCrawling<Arr> = {
 	[Property in keyof Arr]: EnsuredSuccess<CrawlingBase<Arr[Property]>, Arr[Property]>
 };
 
+interface CrawlingBaseClassConstructor<CrawlingClass extends CrawlingBase<NativeType>, NativeType> {
+    new (property: CrawleableProperty<NativeType>, context: CrawlingContext): CrawlingClass;
+}
+
 export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> = CrawleableProperty<NativeType>> {
 	_context: CrawlingContext;
 	_property: P;
@@ -71,6 +75,11 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		}
 	}
 
+	static _baseCreateWithValue<PropertyType, C extends CrawlingBase<PropertyType> = CrawlingBase<PropertyType>>
+	(value: PropertyType, context: CrawlingContext, ctor: CrawlingBaseClassConstructor<C, PropertyType>) {
+		return new ctor({ success: true, value }, context)
+	}
+
 	/**
 	 * Using the `base` functions and the `not base` should be the same. The not base function is needed to be coded per typescript limitations
 	 */
@@ -95,14 +104,22 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		return !this._property.success;
 	}
 
+	toCollection(): CrawlingCollection<NativeType> {
+		if (!this._property.success) {
+			return CrawlingCollection.baseCreateWithError(this._property.error, this._context) as CrawlingCollection<NativeType>;
+		}
+
+		return CrawlingCollection.baseCreateWithValue([this._property.value], this._context) as CrawlingCollection<NativeType>;
+	}
+
 	toResult() {
 		return this._property;
 	}
 
 	ifElse<ReturnType>(
 		predicateFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => boolean,
-		trueFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => CrawlingBase<ReturnType>,
-		falseFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => CrawlingBase<ReturnType>,
+		trueFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => ReturnType,
+		falseFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => ReturnType,
 	): CrawlingBase<ReturnType> {
 		if (this.hadError()) {
 			return new CrawlingBase<ReturnType>(this._property, this._context);
@@ -110,9 +127,9 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 
 		if (this.hadSuccess()) {
 			if (predicateFn(this)) {
-				return trueFn(this);
+				return CrawlingBase.baseCreateWithValue(trueFn(this), this._context);
 			} else {
-				return falseFn(this);
+				return CrawlingBase.baseCreateWithValue(falseFn(this), this._context);
 			}
 		}
 
@@ -144,9 +161,32 @@ export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 		}
 	}
 
-	getFirst(): CrawlingBase<ItemType> {
+	getFirst<C extends CrawlingBase<ItemType> = CrawlingBase<ItemType>>(ctor: CrawlingBaseClassConstructor<C, ItemType>): CrawlingBase<ItemType> {
 		if (!this._property.success) return CrawlingBase.baseCreateWithError(this._property.error, this._context);
 
-		return CrawlingBase.baseCreateWithValue<ItemType>(this._property.value[0], this._context);
+		return CrawlingBase._baseCreateWithValue<ItemType>(this._property.value[0], this._context, ctor);
+	}
+
+	getItem(index: number): CrawlingBase<ItemType> {
+		if (!this._property.success) return CrawlingBase.baseCreateWithError(this._property.error, this._context);
+
+		if (typeof this._property.value[index] === 'undefined') return CrawlingBase.baseCreateWithError(`element at index "${this._property.value}"`, this._context);
+
+		return CrawlingBase.baseCreateWithValue<ItemType>(this._property.value[index], this._context);
+	}
+
+	map<NewNativeType>(mapCb: (element: EnsuredSuccess<CrawlingBase<ItemType>, ItemType>) => CrawlingBase<NewNativeType>): CrawlingCollection<NewNativeType> {
+		if (!this._property.success) return CrawlingCollection.baseCreateWithError<NewNativeType[]>(this._property.error, this._context) as CrawlingCollection<NewNativeType>;
+
+		const crawlArray = this._property.value.map(
+				(element) => mapCb(CrawlingBase.baseCreateWithValue(element, this._context) as EnsuredSuccess<CrawlingBase<ItemType>, ItemType>))
+
+		for (const crawl of crawlArray) {
+			if (!crawl._property.success) {
+				return CrawlingCollection.baseCreateWithError<NewNativeType[]>(crawl._property.error, CrawlingBase.getMergedContexts([this._context, crawl._context])) as CrawlingCollection<NewNativeType>;
+			}
+		}
+
+		return CrawlingCollection.baseCreateWithValue<NewNativeType[]>(crawlArray.map(crawl => (crawl as EnsuredSuccess<typeof crawl, NewNativeType>)._property.value), this._context) as CrawlingCollection<NewNativeType>;
 	}
 }
