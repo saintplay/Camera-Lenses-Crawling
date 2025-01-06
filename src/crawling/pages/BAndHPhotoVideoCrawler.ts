@@ -4,10 +4,9 @@ import { LENS_MOUNT_ALLOWLIST, LensMount, SENSOR_COVERAGE_ALLOWLIST, SensorCover
 import { ApertureLimit, CrawleableLensDescription, FocalLength, MountSensorOption } from "../../types";
 import { CrawlingBase } from "../models/CrawlingBase";
 import { CrawlingElements } from "../models/CrawlingDom";
-import { CrawlingText } from "../models/CrawlingText";
+import { CrawlingText, CrawlingTexts } from "../models/CrawlingText";
 import { PageCrawler } from "./PageCrawler";
 
-// TODO: Move crawling logic from main.ts here
 export class BAndHPhotoVideoCrawler extends PageCrawler {
 	crawlLensDescription(): CrawleableLensDescription {
 		const brand = CrawlingElements
@@ -54,18 +53,24 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getTextContent()
 			.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true)
 
-		//const otherLensMounts = CrawlingElements
-		//	.getBySelector('BCOMMIT', 'other lens mounts')
-		//	.map<CrawlingText>((element) => element.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true))
+		const availableLensMounts = (CrawlingElements
+			.getBySelector('[data-selenium=itemOptionsGroupHeader]', 'other lens mounts')
+			.findByTextContent(/^Lens Mount$/gm)
+			.getParent()
+			.getBySelector('[data-selenium=optionsGroupingName]')
+			.mapElements<string>((element) => element.getTextContent(), CrawlingTexts) as CrawlingTexts)
+			.map<LensMount>((mountCandidate) => mountCandidate.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true))
 
-		//const mountSensorOptions = CrawlingBase
-		//	.unionByValue([tableLensMount.toCollection(), otherLensMounts])
-		//	.map<CrawleableProperty<MountSensorOption>>((lensMount) =>
-		//		CrawlingBase.baseCreateWithValue({ sensorCoverage, lensMount } as MountSensorOption), CrawlingBase.getMergedContexts([sensorCoverage, lensMount]))
+		const allLensMounts = CrawlingBase
+			.unionByValue<LensMount>(tableLensMount.toCollection(), availableLensMounts)
+		// TODO: sort to get the same order
+		//.sortByValue()
 
 		const mountSensorOptions = CrawlingBase
-			.make<[SensorCoverage, LensMount]>([sensorCoverage, tableLensMount])
-			(([coverage, mount]): MountSensorOption[] => [{ sensorCoverage: coverage._property.value, lensMount: mount._property.value }])
+			.make<[SensorCoverage, LensMount[]]>([sensorCoverage, allLensMounts])
+			(([coverage, mounts]): MountSensorOption[] => mounts._property.value.map(
+				(mount) => ({ sensorCoverage: coverage._property.value, lensMount: mount })
+			))
 
 		const focalLength = CrawlingElements
 			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'focalLength')

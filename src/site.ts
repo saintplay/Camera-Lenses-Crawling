@@ -47,13 +47,13 @@ listenToEvents((event) => {
 
             sendMessageToExtension({ type: "CRAWL_RESPONSE", success: true, lensDesription, requestId: newRequestId })
         } catch (error) {
+            console.error(error)
             sendMessageToExtension({ type: "CRAWL_RESPONSE", success: false, error: String(error), requestId: newRequestId })
         }
     }
 
     else if (type === "MORE_CRAWL") {
         const { requestId } = event
-
 
         // Only send more info from tabs that did not handle the request before
         if (FULFILLED_REQUEST_IDS[requestId]) return;

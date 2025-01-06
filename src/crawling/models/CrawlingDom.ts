@@ -1,4 +1,4 @@
-import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext } from "./CrawlingBase";
+import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingCollectionClassConstructor, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
 import { CrawlingText } from "./CrawlingText";
 
 export class CrawlingElement extends CrawlingBase<Element> {
@@ -14,12 +14,30 @@ export class CrawlingElement extends CrawlingBase<Element> {
         return new CrawlingElement({ success: false, error }, context)
     }
 
+    getBySelector(selectorPath: string): CrawlingElements {
+        if (!this._property.success) return CrawlingElements.createWithError(`selector path "${selectorPath}" did not match anything`, this._context);
+        
+        const elements = this._property.value.querySelectorAll(selectorPath);
+        const newContext = { ...this._context, selectorPath }
+
+        return CrawlingElements.createWithValue(Array.from(elements), newContext);
+    }
+
     getTextContent(): CrawlingText {
         if (!this._property.success) return CrawlingText.createWithError(this._property.error, this._context);
 
         if (!this._property.value.textContent) return CrawlingText.createWithError('text content not found', this._context)
 
         return CrawlingText.createWithValue(this._property.value.textContent, this._context);
+    }
+
+    getParent(): CrawlingElement {
+        if (!this._property.success) return CrawlingElement.createWithError(this._property.error, this._context);
+
+        const parent = this._property.value.parentElement;
+        if (!parent) return CrawlingElement.createWithError('parent not found', this._context);
+
+        return CrawlingElement.createWithValue(parent, this._context);
     }
 
     getNextElementSibiling(): CrawlingElement {
@@ -36,7 +54,7 @@ export class CrawlingElement extends CrawlingBase<Element> {
  * Enforced to always have at least one value
  */
 export class CrawlingElements extends CrawlingCollection<Element> {
-    private constructor(property: CrawleableProperty<Element[]>, context: CrawlingContext) {
+    constructor(property: CrawleableProperty<Element[]>, context: CrawlingContext) {
         super(property, context);
     }
 
@@ -52,7 +70,7 @@ export class CrawlingElements extends CrawlingCollection<Element> {
         const elements = document.querySelectorAll(selectorPath);
         const newContext = { selectorPath, content: contentContext }
 
-        return CrawlingElements.createWithValue(Array.from(elements).map(element => element), newContext);
+        return CrawlingElements.createWithValue(Array.from(elements), newContext);
     }
 
     findByTextContent(regExp: RegExp): CrawlingElement {
@@ -73,5 +91,15 @@ export class CrawlingElements extends CrawlingCollection<Element> {
 
     getItem(index: number) {
         return super.getItem(index) as CrawlingElement;
+    }
+
+    /**
+     * Use .map instead if you don't need to change the collection type (default: CrawlingCollection)
+     */
+    mapElements<NewNativeType>(
+        mapCb: (element: EnsuredSuccess<CrawlingElement, Element>) => CrawlingBase<NewNativeType>,
+        collectionCtor: CrawlingCollectionClassConstructor<CrawlingCollection<NewNativeType>, NewNativeType> = CrawlingCollection<NewNativeType>
+    ): CrawlingCollection<NewNativeType> {
+        return super.map<NewNativeType>(mapCb as (element: EnsuredSuccess<CrawlingBase<Element>, Element>) => CrawlingBase<NewNativeType>, CrawlingElement, collectionCtor);
     }
 }

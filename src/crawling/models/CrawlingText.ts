@@ -181,7 +181,7 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
  * Enforced to always have at least one element
  */
 export class CrawlingTexts extends CrawlingCollection<string> {
-    protected constructor(property: CrawleableProperty<string[]>, context: CrawlingContext) {
+    constructor(property: CrawleableProperty<string[]>, context: CrawlingContext) {
         super(property, context);
     }
 
@@ -199,5 +199,9 @@ export class CrawlingTexts extends CrawlingCollection<string> {
 
     getItem(index: number) {
         return super.getItem(index) as CrawlingText;
+    }
+
+    map<NewNativeType>(mapCb: (element: EnsuredSuccess<CrawlingText, string>) => CrawlingBase<NewNativeType>): CrawlingCollection<NewNativeType> {
+        return super.map(mapCb as (element: EnsuredSuccess<CrawlingBase<string>, string>) => CrawlingBase<NewNativeType>, CrawlingText);
     }
 }

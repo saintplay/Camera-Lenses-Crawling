@@ -4,19 +4,27 @@ import { listenToEvents, sendMessageToCurrentTab, sendMessageToAllTabs } from '.
 import { BasicLensIdentifier } from '../types';
 import { getTabbedDescription } from './data-tranform';
 
-const buttonEl = document.getElementById("crawl-specs-button");
+const crawlButtonEl = document.getElementById("crawl-specs-button");
+const copyButtonEl = document.getElementById("copy-results-button");
 
 const errorResultEl = document.getElementById("crawl-results-error");
 const successResultEl = document.getElementById("crawl-results-success");
 
 const errorResultWrapperEl = document.getElementById("crawl-results-error-wrapper");
-const successResultWrapperEl = document.getElementById("crawl-results-sucess-wrapper");
+const successResultWrapperEl = document.getElementById("crawl-results-sucess-wrapper") as HTMLPreElement;
 
 const disableFaiLFastOptionEls: NodeListOf<HTMLInputElement> = document.querySelectorAll(".options-container input[type=checkbox]");
 
-buttonEl?.addEventListener("click", () => {
+crawlButtonEl?.addEventListener("click", () => {
     const newRequestId = uuidv4();
     sendMessageToCurrentTab({ type: "CRAWL_REQUEST", newRequestId });
+});
+
+copyButtonEl?.addEventListener("click", () => {
+    if (successResultEl) {
+        window.getSelection()?.selectAllChildren(successResultEl);
+    }
+    document.execCommand("copy");
 });
 
 disableFaiLFastOptionEls.forEach(optionEl => {

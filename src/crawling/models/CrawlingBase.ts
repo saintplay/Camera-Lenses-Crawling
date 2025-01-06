@@ -18,8 +18,12 @@ type MapToSucessCrawling<Arr> = {
 	[Property in keyof Arr]: EnsuredSuccess<CrawlingBase<Arr[Property]>, Arr[Property]>
 };
 
-interface CrawlingBaseClassConstructor<CrawlingClass extends CrawlingBase<NativeType>, NativeType> {
-    new (property: CrawleableProperty<NativeType>, context: CrawlingContext): CrawlingClass;
+export interface CrawlingBaseClassConstructor<CrawlingClass extends CrawlingBase<NativeType>, NativeType> {
+	new(property: CrawleableProperty<NativeType>, context: CrawlingContext): CrawlingClass;
+}
+
+export interface CrawlingCollectionClassConstructor<CrawlingClass extends CrawlingCollection<NativeType>, NativeType> {
+	new(property: CrawleableProperty<NativeType[]>, context: CrawlingContext): CrawlingClass;
 }
 
 export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> = CrawleableProperty<NativeType>> {
@@ -75,9 +79,43 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		}
 	}
 
-	static _baseCreateWithValue<PropertyType, C extends CrawlingBase<PropertyType> = CrawlingBase<PropertyType>>
-	(value: PropertyType, context: CrawlingContext, ctor: CrawlingBaseClassConstructor<C, PropertyType>) {
+	static unionByValue<ItemType, T extends CrawlingCollection<ItemType> = CrawlingCollection<ItemType>>(...crawlingEntities: T[]): T {
+		const finalCollection: ItemType[] = [];
+
+		for (const collection of crawlingEntities) {
+			if (!collection._property.success) {
+				return CrawlingCollection._baseCreateWithError(collection._property.error, collection._context) as T;
+			}
+
+			for (const item of collection._property.value) {
+				// TODO: Implement object comparisson
+				if (!finalCollection.find(i => i === item)) {
+					finalCollection.push(item)
+				}
+			}
+		}
+
+		const mergedContext = CrawlingBase.getMergedContexts(crawlingEntities.map(collection => collection._context));
+		
+		return CrawlingCollection.baseCreateWithValue(finalCollection, mergedContext) as T;
+	}
+
+	/**
+	 * 
+	 * Trying to infer return type from parameter didn't work
+	 */
+	static _baseCreateWithValue<PropertyType>
+		(value: PropertyType, context: CrawlingContext, ctor: CrawlingBaseClassConstructor<CrawlingBase<PropertyType>, PropertyType> = CrawlingBase<PropertyType>) {
 		return new ctor({ success: true, value }, context)
+	}
+
+	/**
+	 * 
+	 * Trying to infer return type from parameter didn't work
+	 */
+	static _baseCreateWithError<PropertyType>
+		(error: string, context: CrawlingContext, ctor: CrawlingBaseClassConstructor<CrawlingBase<PropertyType>, PropertyType> = CrawlingBase<PropertyType>) {
+		return new ctor({ success: false, error }, context)
 	}
 
 	/**
@@ -153,7 +191,7 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
  * Enforced to always have at least one element
  */
 export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
-	protected constructor(property: CrawleableProperty<ItemType[]>, context: CrawlingContext) {
+	constructor(property: CrawleableProperty<ItemType[]>, context: CrawlingContext) {
 		super(property, context);
 
 		if (property.success && property.value.length === 0) {
@@ -161,8 +199,8 @@ export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 		}
 	}
 
-	getFirst<C extends CrawlingBase<ItemType> = CrawlingBase<ItemType>>(ctor: CrawlingBaseClassConstructor<C, ItemType>): CrawlingBase<ItemType> {
-		if (!this._property.success) return CrawlingBase.baseCreateWithError(this._property.error, this._context);
+	getFirst(ctor: CrawlingBaseClassConstructor<CrawlingBase<ItemType>, ItemType> = CrawlingBase<ItemType>) {
+		if (!this._property.success) return CrawlingBase._baseCreateWithError(this._property.error, this._context, ctor);
 
 		return CrawlingBase._baseCreateWithValue<ItemType>(this._property.value[0], this._context, ctor);
 	}
@@ -175,11 +213,18 @@ export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 		return CrawlingBase.baseCreateWithValue<ItemType>(this._property.value[index], this._context);
 	}
 
-	map<NewNativeType>(mapCb: (element: EnsuredSuccess<CrawlingBase<ItemType>, ItemType>) => CrawlingBase<NewNativeType>): CrawlingCollection<NewNativeType> {
+	/**
+	 * Use .mapElements instead if you need to change the collection type (default: CrawlingCollection)
+	 */
+	map<NewNativeType>(
+		mapCb: (element: EnsuredSuccess<CrawlingBase<ItemType>, ItemType>) => CrawlingBase<NewNativeType>,
+		elementCtor: CrawlingBaseClassConstructor<CrawlingBase<ItemType>, ItemType> = CrawlingBase<ItemType>,
+		collectionCtor: CrawlingCollectionClassConstructor<CrawlingCollection<NewNativeType>, NewNativeType> = CrawlingCollection<NewNativeType>
+	): CrawlingCollection<NewNativeType> {
 		if (!this._property.success) return CrawlingCollection.baseCreateWithError<NewNativeType[]>(this._property.error, this._context) as CrawlingCollection<NewNativeType>;
 
 		const crawlArray = this._property.value.map(
-				(element) => mapCb(CrawlingBase.baseCreateWithValue(element, this._context) as EnsuredSuccess<CrawlingBase<ItemType>, ItemType>))
+			(element) => mapCb(CrawlingBase._baseCreateWithValue(element, this._context, elementCtor) as EnsuredSuccess<CrawlingBase<ItemType>, ItemType>))
 
 		for (const crawl of crawlArray) {
 			if (!crawl._property.success) {
@@ -187,6 +232,6 @@ export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 			}
 		}
 
-		return CrawlingCollection.baseCreateWithValue<NewNativeType[]>(crawlArray.map(crawl => (crawl as EnsuredSuccess<typeof crawl, NewNativeType>)._property.value), this._context) as CrawlingCollection<NewNativeType>;
+		return CrawlingCollection._baseCreateWithValue<NewNativeType[]>(crawlArray.map(crawl => (crawl as EnsuredSuccess<typeof crawl, NewNativeType>)._property.value), this._context, collectionCtor) as CrawlingCollection<NewNativeType>;
 	}
 }
