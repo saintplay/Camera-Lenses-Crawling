@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "vue-tsc -b && vite build --config site.vite.js && vite build --config popup.vite.js"
+    "build": "vue-tsc && vite build --config site.vite.js && vite build --config popup.vite.js"
   },
   "keywords": [],
   "author": "",
