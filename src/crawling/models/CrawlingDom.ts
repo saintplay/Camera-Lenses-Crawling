@@ -50,9 +50,6 @@ export class CrawlingElement extends CrawlingBase<Element> {
     }
 }
 
-/**
- * Enforced to always have at least one value
- */
 export class CrawlingElements extends CrawlingCollection<Element> {
     constructor(property: CrawleableProperty<Element[]>, context: CrawlingContext) {
         super(property, context);
@@ -90,7 +87,7 @@ export class CrawlingElements extends CrawlingCollection<Element> {
     }
 
     getItem(index: number) {
-        return super.getItem(index) as CrawlingElement;
+        return super.getItem(index, CrawlingElement) as CrawlingElement;
     }
 
     /**

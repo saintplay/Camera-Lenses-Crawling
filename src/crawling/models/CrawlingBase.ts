@@ -154,6 +154,19 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		return this._property;
 	}
 
+	/** Use with care as it's going to silent error */
+	ifError<ReturnType>(
+		ifErrorValue: ReturnType,
+		elseErrorValue: (crawlingObject: EnsuredSuccess<this, NativeType>) => ReturnType,
+		ctor: CrawlingBaseClassConstructor<CrawlingBase<ReturnType>, ReturnType> = CrawlingBase<ReturnType>,
+	) {
+		if (!this._property.success) {
+			return CrawlingBase._baseCreateWithValue<ReturnType>(ifErrorValue, this._context, ctor);
+		}
+
+		return CrawlingBase._baseCreateWithValue<ReturnType>(elseErrorValue(this as EnsuredSuccess<this, NativeType>), this._context, ctor);
+	}
+
 	ifElse<ReturnType>(
 		predicateFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => boolean,
 		trueFn: (crawlingObject: EnsuredSuccess<this, NativeType>) => ReturnType,
@@ -175,7 +188,7 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 	}
 
 	getErrorMessage() {
-		if (this._property.success) return;
+		if (this._property.success) return "";
 
 		let finalMessage = this._property.error;
 
@@ -186,31 +199,21 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 	}
 }
 
-
-/**
- * Enforced to always have at least one element
- */
 export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 	constructor(property: CrawleableProperty<ItemType[]>, context: CrawlingContext) {
 		super(property, context);
-
-		if (property.success && property.value.length === 0) {
-			this._property = { success: false, error: 'returned zero elements' }
-		}
 	}
 
 	getFirst(ctor: CrawlingBaseClassConstructor<CrawlingBase<ItemType>, ItemType> = CrawlingBase<ItemType>) {
-		if (!this._property.success) return CrawlingBase._baseCreateWithError(this._property.error, this._context, ctor);
-
-		return CrawlingBase._baseCreateWithValue<ItemType>(this._property.value[0], this._context, ctor);
+		return this.getItem(0, ctor);
 	}
 
-	getItem(index: number): CrawlingBase<ItemType> {
-		if (!this._property.success) return CrawlingBase.baseCreateWithError(this._property.error, this._context);
+	getItem(index: number, ctor: CrawlingBaseClassConstructor<CrawlingBase<ItemType>, ItemType> = CrawlingBase<ItemType>) {
+		if (!this._property.success) return CrawlingBase._baseCreateWithError(this._property.error, this._context, ctor);
 
-		if (typeof this._property.value[index] === 'undefined') return CrawlingBase.baseCreateWithError(`element at index "${this._property.value}"`, this._context);
+		if (typeof this._property.value[index] === 'undefined') return CrawlingBase._baseCreateWithError(`element at index "${index}" does not exists`, this._context, ctor);
 
-		return CrawlingBase.baseCreateWithValue<ItemType>(this._property.value[index], this._context);
+		return CrawlingBase._baseCreateWithValue<ItemType>(this._property.value[index], this._context, ctor);
 	}
 
 	/**

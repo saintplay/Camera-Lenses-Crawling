@@ -37,6 +37,10 @@ function getFocalDescriptor(lensDescription: Partial<LensDescription>) {
         descriptionArray.push(lensDescription.AF ? 'AF' : 'MF')
     }
     
+    if (lensDescription.macro) {
+        descriptionArray.push('Macro')
+    }
+
     if (lensDescription.OIS) {
         descriptionArray.push('OIS')
     }

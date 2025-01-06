@@ -63,14 +63,14 @@ onMounted(() => {
 
             <table v-if="lensDesriptionResult">
                 <tbody>
-                    <tr v-for="([property, value]) in Object.entries(lensDesriptionResult).filter(([, value]) => typeof value !== 'undefined')">
+                    <tr v-for="(value, property) in lensDesriptionResult">
                         <td style="font-weight: bold;">{{  property }}</td>
                         <td>{{ value }}</td>
                     </tr>
                 </tbody>
             </table>
             
-			<pre ref="tabbed-result-pre" v-show="false">{{tabbedResults }}</pre>
+			<pre ref="tabbed-result-pre">{{tabbedResults }}</pre>
 
 			<div style="margin-top: 6px 0;">
 				<button @click="copyResults">Copy</button>

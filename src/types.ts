@@ -1,4 +1,4 @@
-import { CrawleableProperty } from "./crawling/models/CrawlingBase";
+import { CrawlingBase } from "./crawling/models/CrawlingBase";
 import { LensBrand } from "./data/lens-brands";
 import { LensMount, SensorCoverage } from "./data/optics";
 
@@ -24,9 +24,9 @@ export interface LensOpticalDescription extends BasicLensIdentifier {
 	minimumFocusDistanceCM: number,
 	AF: boolean,
 	OIS: boolean,
+	macro: boolean,
 	// TODO: Evaluate if we need the folowing data
 	// AE: boolean, // Automatic Chip
-	// macro: boolean,
 	// cine: boolean
 	// anamorphic: boolean,
 	// pancake: boolean,
@@ -46,5 +46,5 @@ export interface StoreItemDescription {
 export type LensDescription = LensOpticalDescription & StoreItemDescription;
 
 export type CrawleableLensDescription = {
-	[property in keyof LensDescription]: CrawleableProperty<LensDescription[property]>;
+	[property in keyof LensDescription]: CrawlingBase<LensDescription[property]>;
 }

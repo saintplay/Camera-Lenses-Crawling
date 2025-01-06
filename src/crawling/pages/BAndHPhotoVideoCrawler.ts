@@ -53,11 +53,12 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getTextContent()
 			.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true)
 
-		const availableLensMounts = (CrawlingElements
+		const availableLensMounts = ((CrawlingElements
 			.getBySelector('[data-selenium=itemOptionsGroupHeader]', 'other lens mounts')
 			.findByTextContent(/^Lens Mount$/gm)
 			.getParent()
 			.getBySelector('[data-selenium=optionsGroupingName]')
+			.ifError<Element[]>([], (crawl) => crawl._property.value, CrawlingElements) as CrawlingElements)
 			.mapElements<string>((element) => element.getTextContent(), CrawlingTexts) as CrawlingTexts)
 			.map<LensMount>((mountCandidate) => mountCandidate.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true))
 
@@ -180,6 +181,11 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getTextContent()
 			.matchesRegExp(/Yes/gm)
 
+		const macro = CrawlingElements
+			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'Macro')
+			.findByTextContent(/^Macro Reproduction Ratio$/gm)
+			.ifError(false, () => true)
+
 		const filterSize = CrawlingElements
 			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'filterSize')
 			.findByTextContent(/^Filter Size$/gm)
@@ -220,20 +226,21 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.toNumber();
 
 		return {
-			brand: brand.toResult(),
-			line: line.toResult(),
-			mountSensorOptions: mountSensorOptions.toResult(),
-			focalLength: focalLength.toResult(),
-			minimumAperture: minimumAperture.toResult(),
-			maximumAperture: maximumAperture.toResult(),
-			minimumFocusDistanceCM: minimumFocusDistanceCM.toResult(),
-			AF: af.toResult(),
-			OIS: ois.toResult(),
-			filterSize: filterSize.toResult(),
-			weightGR: weightGR.toResult(),
-			currentPrice: currentPrice.toResult(),
-			fullPrice: fullPrice.toResult(),
-			buyingLink: { success: true, value: window.location.href },
+			brand,
+			line,
+			mountSensorOptions,
+			focalLength,
+			minimumAperture,
+			maximumAperture,
+			minimumFocusDistanceCM,
+			AF: af,
+			OIS: ois,
+			macro,
+			filterSize,
+			weightGR,
+			currentPrice,
+			fullPrice,
+			buyingLink: CrawlingBase._baseCreateWithValue(window.location.href, {}),
 		}
 
 	}
