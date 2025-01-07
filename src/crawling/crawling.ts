@@ -9,7 +9,7 @@ export const CRAWLABLE_SITES: [RegExp, PageCrawler][] = [
 ]
 
 // TODO: This merged/multiple description logic should be in the popup code
-export function crawlLensDescription(): Partial<LensDescription> {
+export function crawlLensDescription(): LensDescription {
     const matchedSites = CRAWLABLE_SITES.filter(([regExpSite]) => regExpSite.test(window.location.hostname))
 
     const capturedLensDescriptions = matchedSites.map(([, pageCrawler]) => pageCrawler.crawlLensDescription())

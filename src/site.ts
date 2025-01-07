@@ -1,5 +1,6 @@
 import { crawlLensDescription } from './crawling/crawling';
 import { listenToEvents, sendMessageToExtension } from './events';
+import { descriptionMatchesIdentifier, getBasicLensIdentifier } from './types';
 
 interface CrawlingOptions {
     disableFailFast: {
@@ -53,7 +54,7 @@ listenToEvents((event) => {
     }
 
     else if (type === "MORE_CRAWL") {
-        const { requestId } = event
+        const { requestId, lensIdentifier } = event
 
         // Only send more info from tabs that did not handle the request before
         if (FULFILLED_REQUEST_IDS[requestId]) return;
@@ -61,12 +62,18 @@ listenToEvents((event) => {
         try {
             const lensDesription = crawlLensDescription();
 
-            console.log("Mores Lens Specs Info Crawled");
-            console.log(lensDesription);
+            if (!descriptionMatchesIdentifier(lensDesription, lensIdentifier)) {
+                console.log("More Lens Specs Info Skipped")
+                console.log("Requested Identifer", lensIdentifier)
+                console.log("Available Identifer", getBasicLensIdentifier(lensDesription))
+            } else {
+                console.log("Mores Lens Specs Info Crawled");
+                console.log(lensDesription);
+    
+                sendMessageToExtension({ type: "MORE_CRAWL_RESPONSE", success: true, lensDesription })
+            }
 
             FULFILLED_REQUEST_IDS[requestId] = true;
-
-            sendMessageToExtension({ type: "MORE_CRAWL_RESPONSE", success: true, lensDesription })
         } catch (error) {
             // TODO: send to extension?
             console.error(error)

@@ -30,7 +30,7 @@ function getMaxFocalLength(focalLength: FocalLength) {
     return focalLength.maxLength
 }
 
-function getFocalDescriptor(lensDescription: Partial<LensDescription>) {
+function getFocalDescriptor(lensDescription: LensDescription) {
     const descriptionArray = [];
 
     if (typeof lensDescription.AF !== 'undefined') {
@@ -56,7 +56,7 @@ function getApertureDescriptor(apertureLimit: ApertureLimit) {
     return `f/${apertureLimit[0]} - f/${apertureLimit[1]}`;
 }
 
-export function getTabbedDescription(lensDescription: Partial<LensDescription>) {
+export function getTabbedDescription(lensDescription: LensDescription) {
 	const resultArray = [
 		lensDescription.brand,
 		lensDescription.line,
@@ -70,7 +70,7 @@ export function getTabbedDescription(lensDescription: Partial<LensDescription>) 
 		lensDescription.filterSize,
 		lensDescription.weightGR,
 		lensDescription.currentPrice,
-		lensDescription.fullPrice,
+		lensDescription.fullPrice ? lensDescription.fullPrice : lensDescription.currentPrice,
 		lensDescription.buyingLink,
 	];
 

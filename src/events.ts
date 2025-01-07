@@ -28,7 +28,7 @@ type EventCrawlResponseSuccess = {
 	type: 'CRAWL_RESPONSE',
 	success: true;
 	requestId: string,
-	lensDesription: Partial<LensDescription>,
+	lensDesription: LensDescription,
 }
 
 type EventCrawlResponseError = {
@@ -41,7 +41,7 @@ type EventCrawlResponseError = {
 type EventMoreCrawlResponseSuccess = {
 	type: 'MORE_CRAWL_RESPONSE',
 	success: true;
-	lensDesription: Partial<LensDescription>
+	lensDesription: LensDescription
 }
 
 type EventCrawlResponse = EventCrawlResponseSuccess | EventCrawlResponseError;
@@ -63,7 +63,7 @@ export function sendMessageToCurrentTab(event: ChromeExtensionEvent) {
 }
 
 export function sendMessageToAllTabs(event: ChromeExtensionEvent) {
-	chrome.tabs.query({}).then((tabs) => {
+	chrome.tabs.query({ currentWindow: true }).then((tabs) => {
 		tabs.forEach(tab => {
 			sendMessageToTab(tab.id as number, event)
 		})
