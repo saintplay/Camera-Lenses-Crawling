@@ -2,7 +2,7 @@ import { AllowList } from "../../data/data";
 import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
 import { CrawlingBoolean } from "./CrawlingBoolean";
 import { CrawlingNumber } from "./CrawlingNumber";
-import { CrawlingDistance } from "./CrawlingUnit";
+import { CrawlingDistance, CrawlingWeight } from "./CrawlingUnit";
 
 /**
  * Enforced to always have at least one non-empty character
@@ -164,6 +164,12 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
         if (!this._property.success) return CrawlingDistance.createWithError(this._property.error, this._context)
 
         return CrawlingDistance.parseFromText(this._property.value, this._context);
+    }
+
+    toWeight(): CrawlingWeight {
+        if (!this._property.success) return CrawlingWeight.createWithError(this._property.error, this._context)
+
+        return CrawlingWeight.parseFromText(this._property.value, this._context);
     }
 
     toNumber(): CrawlingNumber {

@@ -17,6 +17,11 @@ interface Distance {
 	unit: 'cm' | 'm' | 'mm'
 }
 
+interface Weight {
+	value: number;
+	unit: 'g' | 'kg'
+}
+
 export class CrawlingDistance extends CrawlingBase<Distance> {
 	protected constructor(property: CrawleableProperty<Distance>, context: CrawlingContext) {
 		super(property, context);
@@ -52,7 +57,7 @@ export class CrawlingDistance extends CrawlingBase<Distance> {
 			return CrawlingDistance.createWithError(`text "${text}" matched with multiple units`, context);
 		}
 
-		if (centimetersCapture._property.success)   return CrawlingDistance.createWithValue({ value: centimetersCapture._property.value, unit: 'cm' }, context)
+		if (centimetersCapture._property.success) return CrawlingDistance.createWithValue({ value: centimetersCapture._property.value, unit: 'cm' }, context)
 
 		if (metersCapture._property.success) return CrawlingDistance.createWithValue({ value: metersCapture._property.value, unit: 'm' }, context)
 
@@ -64,7 +69,52 @@ export class CrawlingDistance extends CrawlingBase<Distance> {
 	toCentimetersValue(): CrawlingNumber {
 		if (!this._property.success) return CrawlingNumber.createWithError(this._property.error, this._context);
 		
-		
 		return CrawlingNumber.createWithValue(Math.round(convert(this._property.value.value).from(this._property.value.unit).to('cm')), this._context)
+	}
+}
+
+export class CrawlingWeight extends CrawlingBase<Weight> {
+	protected constructor(property: CrawleableProperty<Weight>, context: CrawlingContext) {
+		super(property, context);
+	}
+
+	static createWithValue(value: Weight, context: CrawlingContext) {
+		return new CrawlingWeight({ success: true, value }, context)
+	}
+
+	static createWithError(error: string, context: CrawlingContext) {
+		return new CrawlingWeight({ success: false, error }, context)
+	}
+
+
+	static parseFromText(text: string, context: CrawlingContext): CrawlingWeight {
+		// Sample: 570 g
+		const gramsCapture = CrawlingNumber.captureWithRegExp(text, /(\d+(?:\.\d+)?)\s?g\b/gmi, context)
+		// Sample: 1.33 kg
+		const kilogramsCapture = CrawlingNumber.captureWithRegExp(text, /(\d+(?:\.\d+)?)\s?kg\b/gmi, context)
+
+		const validCaptures: CrawlingNumber[] = []
+
+		if (gramsCapture._property.success) validCaptures.push(gramsCapture);
+		if (kilogramsCapture._property.success) validCaptures.push(kilogramsCapture);
+
+		if (validCaptures.length === 0) {
+			return CrawlingWeight.createWithError(`text "${text}" did not match with any unit`, context)
+		}
+		if (validCaptures.length > 1) {
+			return CrawlingWeight.createWithError(`text "${text}" matched with multiple units`, context);
+		}
+
+		if (gramsCapture._property.success) return CrawlingWeight.createWithValue({ value: gramsCapture._property.value, unit: 'g' }, context)
+
+		if (kilogramsCapture._property.success) return CrawlingWeight.createWithValue({ value: kilogramsCapture._property.value, unit: 'kg' }, context)
+
+		return CrawlingWeight.createWithError(`Unreachable code parsing unit from text`, context);
+	}
+
+	toGrams(): CrawlingNumber {
+		if (!this._property.success) return CrawlingNumber.createWithError(this._property.error, this._context);
+		
+		return CrawlingNumber.createWithValue(Math.round(convert(this._property.value.value).from(this._property.value.unit).to('g')), this._context)
 	}
 }

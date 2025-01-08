@@ -17,7 +17,7 @@ export interface BasicLensIdentifier {
 	maximumAperture: ApertureLimit;
 }
 
-export interface ComplementaryLensDescription {
+export interface ComplementaryOpticalDescription {
 	line: string;
 	mountSensorOptions: MountSensorOption[];
 	minimumAperture: ApertureLimit;
@@ -37,15 +37,20 @@ export interface ComplementaryLensDescription {
 	weightGR: number;
 }
 
-export type LensOpticalDescription = BasicLensIdentifier & Partial<ComplementaryLensDescription>;
-
 export interface StoreItemDescription {
 	currentPrice: number;
 	fullPrice: number;
-	buyingLink: string;
+}
+export interface ProducWithLinks {
+	productLink: string;
+	bhPhotoVideoLink: string;
+	adoramaLink: string;
+	amazonLink: string;
 }
 
-export type LensDescription = LensOpticalDescription & Partial<StoreItemDescription>;
+export type ComplementaryDescription = ComplementaryOpticalDescription & StoreItemDescription & ProducWithLinks;
+
+export type LensDescription = BasicLensIdentifier & Partial<ComplementaryDescription>;
 
 const LENS_DESCRIPTION_COMPARER: { [property in keyof Required<LensDescription>]: (v1: NonNullable<LensDescription[property]>, v2: NonNullable<LensDescription[property]>) => boolean } = {
 	brand: (v1, v2) => v1 == v2,
@@ -89,7 +94,10 @@ const LENS_DESCRIPTION_COMPARER: { [property in keyof Required<LensDescription>]
 	weightGR: (v1, v2) => v1 === v2,
 	currentPrice: (v1, v2) => v1 === v2,
 	fullPrice: (v1, v2) => v1 === v2,
-	buyingLink: (v1, v2) => v1 === v2,
+	productLink:(v1, v2) => v1 === v2,
+	bhPhotoVideoLink:(v1, v2) => v1 === v2,
+	adoramaLink:(v1, v2) => v1 === v2,
+	amazonLink:(v1, v2) => v1 === v2,
 }
 
 export type CrawleableLensDescription = {
@@ -97,7 +105,7 @@ export type CrawleableLensDescription = {
 }
 
 export const isIncomplete = (lensDescription: LensDescription) => {
-	const complementaryDescription: { [property in keyof ComplementaryLensDescription]: true } = {
+	const complementaryDescription: { [property in keyof ComplementaryDescription]: true } = {
 		line: true,
 		mountSensorOptions: true,
 		minimumAperture: true,
@@ -107,10 +115,16 @@ export const isIncomplete = (lensDescription: LensDescription) => {
 		macro: true,
 		filterSize: true,
 		weightGR: true,
+		currentPrice: true,
+		fullPrice: true,
+		productLink: true,
+		bhPhotoVideoLink: true,
+		adoramaLink: true,
+		amazonLink: true,
 	}
 
 	for (const descriptor in complementaryDescription) {
-		if (typeof lensDescription[descriptor as keyof ComplementaryLensDescription] === 'undefined') {
+		if (typeof lensDescription[descriptor as keyof ComplementaryDescription] === 'undefined') {
 			return true;
 		}
 	}

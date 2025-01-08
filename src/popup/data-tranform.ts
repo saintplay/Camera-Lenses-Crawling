@@ -71,7 +71,10 @@ export function getTabbedDescription(lensDescription: LensDescription) {
 		lensDescription.weightGR,
 		lensDescription.currentPrice,
 		lensDescription.fullPrice ? lensDescription.fullPrice : lensDescription.currentPrice,
-		lensDescription.buyingLink,
+		lensDescription.productLink,
+		lensDescription.bhPhotoVideoLink,
+		lensDescription.adoramaLink,
+		lensDescription.amazonLink,
 	];
 
 	return resultArray.join('\t');

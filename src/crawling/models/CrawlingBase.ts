@@ -79,6 +79,22 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		}
 	}
 
+	static useFirst<ItemType>(crawlingEntities: CrawlingBase<ItemType>[]): CrawlingBase<ItemType> {
+		const mergedContext = this.getMergedContexts(crawlingEntities.map(c => c._context));
+		
+		if (crawlingEntities.length == 0) {
+			return CrawlingBase._baseCreateWithError<ItemType>('trying to useFirst with no elements', mergedContext)
+		}
+		
+		for (const crawl of crawlingEntities) {
+			if (crawl._property.success) {
+				return crawl;
+			}
+		}
+
+		return CrawlingBase._baseCreateWithError<ItemType>('trying to useFirst, but no successful crawl provided', mergedContext)
+	}
+
 	static unionByValue<ItemType, T extends CrawlingCollection<ItemType> = CrawlingCollection<ItemType>>(...crawlingEntities: T[]): T {
 		const finalCollection: ItemType[] = [];
 

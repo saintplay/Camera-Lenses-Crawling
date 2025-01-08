@@ -201,8 +201,11 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.findByTextContent(/^Weight$/gm)
 			.getNextElementSibiling()
 			.getTextContent()
-			.extractWithRegExp(/\/ (\d+(?:\.\d+)?)\s\g$/gm, 1) // Sample: 1.25 lb / 570 g
-			.toNumber();
+			 // Sample: 1.25 lb / 570 g
+			 // Sample: 2.93 lb / 1.33 kg
+			.extractWithRegExp(/\/ (\d+(?:\.\d+)?\sk?\g)$/gm, 1)
+			.toWeight()
+			.toGrams();
 
 		const currentPrice = CrawlingElements
 			.getBySelector('[data-selenium=pricingPrice]', 'currentPrice')
@@ -240,7 +243,7 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			weightGR,
 			currentPrice,
 			fullPrice,
-			buyingLink: CrawlingBase._baseCreateWithValue(window.location.href, {}),
+			bhPhotoVideoLink: CrawlingBase._baseCreateWithValue(window.location.href, {}),
 		}
 
 	}
