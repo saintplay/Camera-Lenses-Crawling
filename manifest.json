@@ -11,6 +11,7 @@
 	"content_scripts": [
 		{
 			"matches": [
+				"https://*.amazon.com/*",
 				"https://*.bhphotovideo.com/*",
 				"https://*.fujifilm-x.com/*"
 			],

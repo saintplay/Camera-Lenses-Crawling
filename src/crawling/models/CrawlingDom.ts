@@ -40,6 +40,15 @@ export class CrawlingElement extends CrawlingBase<Element> {
         return CrawlingElement.createWithValue(parent, this._context);
     }
 
+    getChild(nth: number = 0): CrawlingElement {
+        if (!this._property.success) return CrawlingElement.createWithError(this._property.error, this._context);
+
+        const child = this._property.value.children.item(nth);
+        if (!child) return CrawlingElement.createWithError(`child nth "${nth}" not found`, this._context);
+
+        return CrawlingElement.createWithValue(child, this._context);
+    }
+
     getNextElementSibiling(): CrawlingElement {
         if (!this._property.success) return CrawlingElement.createWithError(this._property.error, this._context);
 

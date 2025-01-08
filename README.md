@@ -6,6 +6,7 @@ This is meant to be used with your own lens db table (google sheet, excel or any
 
 # Supported pages
 
+- <https://www.amazon.com/>
 - <https://www.bhphotovideo.com/>
 - <https://fujifilm-x.com/>
 

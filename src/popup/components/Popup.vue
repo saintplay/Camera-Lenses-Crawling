@@ -3,7 +3,7 @@ import { ref, onMounted, useTemplateRef, computed, reactive } from 'vue'
 import { v4 as uuidv4 } from 'uuid';
 
 import { listenToEvents, sendMessageToAllTabs, sendMessageToCurrentTab } from '../../events';
-import { BasicLensIdentifier, getBasicLensIdentifier, isIncomplete, LensDescription, mergeLensDescriptions } from '../../types';
+import { BasicLensIdentifier, getBasicLensIdentifier, isIncomplete, LensDescription, mergeLensDescriptions, ProducWithLinks } from '../../types';
 import { getTabbedDescription } from '../data-tranform';
 
 const errorMessage = ref<string | null>(null)
@@ -24,7 +24,7 @@ function copyResults() {
 	document.execCommand("copy");
 }
 
-const tabbedResults = computed(() => lensDesriptionResult.value ? getTabbedDescription(lensDesriptionResult.value):  null)
+const tabbedResults = computed(() => lensDesriptionResult.value ? getTabbedDescription(lensDesriptionResult.value) : null)
 
 onMounted(() => {
 	listenToEvents((event) => {
@@ -33,9 +33,9 @@ onMounted(() => {
 		if (type === "CRAWL_RESPONSE") {
 			if (event.success) {
 				const { lensDesription, requestId } = event
-                lensDesriptionResult.value = lensDesription;
-                errorMessage.value = null;
-                mergeErrors.length = 0;
+				lensDesriptionResult.value = lensDesription;
+				errorMessage.value = null;
+				mergeErrors.length = 0;
 
 				if (isIncomplete(lensDesription)) {
 					// Request more information from other tabs
@@ -44,9 +44,9 @@ onMounted(() => {
 			} else {
 				const { error } = event
 
-                lensDesriptionResult.value = null;
-                errorMessage.value = error;
-                mergeErrors.length = 0;
+				lensDesriptionResult.value = null;
+				errorMessage.value = error;
+				mergeErrors.length = 0;
 			}
 
 		}
@@ -54,7 +54,7 @@ onMounted(() => {
 			if (event.success) {
 				const { mergeErrors, lensDescription: newLensDescription } = mergeLensDescriptions(lensDesriptionResult.value as LensDescription, event.lensDesription)
 
- 				lensDesriptionResult.value = newLensDescription;
+				lensDesriptionResult.value = newLensDescription;
 				mergeErrors.length = 0;
 				mergeErrors.push(...mergeErrors);
 			} else {
@@ -66,6 +66,27 @@ onMounted(() => {
 		}
 	})
 })
+
+type ExpectedLensDescriptionKeys = Exclude<keyof LensDescription, keyof ProducWithLinks> | keyof Pick<ProducWithLinks, 'productLink'>;
+
+const EXPECTED_FIELDS: { [prop in ExpectedLensDescriptionKeys]: true } = {
+	brand: true,
+	focalLength: true,
+	maximumAperture: true,
+	line: true,
+	mountSensorOptions: true,
+	minimumAperture: true,
+	minimumFocusDistanceCM: true,
+	AF: true,
+	OIS: true,
+	macro: true,
+	filterSize: true,
+	weightGR: true,
+	currentPrice: true,
+	fullPrice: true,
+	productLink: true,
+}
+
 </script>
 
 <template>
@@ -74,18 +95,16 @@ onMounted(() => {
 		<button @click="crawlSpecs">Get Specs</button>
 
 		<div v-show="lensDesriptionResult" style="margin-top: 12px 0;">
-			<h3 style="margin-bottom: 8px;">Results</h3>
+			<h3 style="margin-bottom: 8px;">Missing properties</h3>
 
-            <table v-if="lensDesriptionResult">
-                <tbody>
-                    <tr v-for="(value, property) in lensDesriptionResult">
-                        <td style="font-weight: bold;">{{  property }}</td>
-                        <td>{{ value }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-			<pre ref="tabbed-result-pre">{{tabbedResults }}</pre>
+			<ul>
+				<li
+					v-for="property in Object.entries(EXPECTED_FIELDS).filter(([property]) => lensDesriptionResult && typeof lensDesriptionResult[property] === 'undefined').map(([property]) => property)">
+					<td style="font-weight: bold; color: red;">{{ property }}</td>
+				</li>
+			</ul>
+
+			<pre ref="tabbed-result-pre">{{ tabbedResults }}</pre>
 
 			<div style="margin-top: 6px 0;">
 				<button @click="copyResults">Copy</button>
@@ -95,13 +114,13 @@ onMounted(() => {
 				<h3 style="margin-bottom: 8px;">Merge Errors</h3>
 
 				<table>
-                <tbody>
-                    <tr v-for="error in mergeErrors">
-                        <td style="font-weight: bold;">{{  error.field }}</td>
-                        <td v-for="value in error.values">{{ value }}</td>
-                    </tr>
-                </tbody>
-            </table>
+					<tbody>
+						<tr v-for="error in mergeErrors">
+							<td style="font-weight: bold;">{{ error.field }}</td>
+							<td v-for="value in error.values">{{ value }}</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 		</div>
 

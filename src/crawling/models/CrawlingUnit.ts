@@ -19,7 +19,7 @@ interface Distance {
 
 interface Weight {
 	value: number;
-	unit: 'g' | 'kg'
+	unit: 'g' | 'kg' | 'oz' | 'lb'
 }
 
 export class CrawlingDistance extends CrawlingBase<Distance> {
@@ -58,9 +58,7 @@ export class CrawlingDistance extends CrawlingBase<Distance> {
 		}
 
 		if (centimetersCapture._property.success) return CrawlingDistance.createWithValue({ value: centimetersCapture._property.value, unit: 'cm' }, context)
-
 		if (metersCapture._property.success) return CrawlingDistance.createWithValue({ value: metersCapture._property.value, unit: 'm' }, context)
-
 		if (milimetersCapture._property.success) return CrawlingDistance.createWithValue({ value: milimetersCapture._property.value, unit: 'mm' }, context)
 
 		return CrawlingDistance.createWithError(`Unreachable code parsing unit from text`, context);
@@ -92,11 +90,17 @@ export class CrawlingWeight extends CrawlingBase<Weight> {
 		const gramsCapture = CrawlingNumber.captureWithRegExp(text, /(\d+(?:\.\d+)?)\s?g\b/gmi, context)
 		// Sample: 1.33 kg
 		const kilogramsCapture = CrawlingNumber.captureWithRegExp(text, /(\d+(?:\.\d+)?)\s?kg\b/gmi, context)
+		// Sample: 13.2 ounces
+		const ouncesCapture = CrawlingNumber.captureWithRegExp(text, /(\d+(?:\.\d+)?)\s?ounces\b/gmi, context)
+		// Sample: 1.1 pounds
+		const poundsCapture = CrawlingNumber.captureWithRegExp(text, /(\d+(?:\.\d+)?)\s?pounds\b/gmi, context)
 
 		const validCaptures: CrawlingNumber[] = []
 
 		if (gramsCapture._property.success) validCaptures.push(gramsCapture);
 		if (kilogramsCapture._property.success) validCaptures.push(kilogramsCapture);
+		if (ouncesCapture._property.success) validCaptures.push(ouncesCapture);
+		if (poundsCapture._property.success) validCaptures.push(poundsCapture);
 
 		if (validCaptures.length === 0) {
 			return CrawlingWeight.createWithError(`text "${text}" did not match with any unit`, context)
@@ -106,8 +110,9 @@ export class CrawlingWeight extends CrawlingBase<Weight> {
 		}
 
 		if (gramsCapture._property.success) return CrawlingWeight.createWithValue({ value: gramsCapture._property.value, unit: 'g' }, context)
-
 		if (kilogramsCapture._property.success) return CrawlingWeight.createWithValue({ value: kilogramsCapture._property.value, unit: 'kg' }, context)
+		if (ouncesCapture._property.success) return CrawlingWeight.createWithValue({ value: ouncesCapture._property.value, unit: 'oz' }, context)
+		if (poundsCapture._property.success) return CrawlingWeight.createWithValue({ value: poundsCapture._property.value, unit: 'lb' }, context)
 
 		return CrawlingWeight.createWithError(`Unreachable code parsing unit from text`, context);
 	}
