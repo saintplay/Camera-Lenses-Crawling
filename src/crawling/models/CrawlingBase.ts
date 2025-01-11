@@ -233,6 +233,29 @@ export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 		super(property, context);
 	}
 
+	static concatSuccessfulls<ElementType>(
+		collections: CrawlingCollection<ElementType>[],
+		collectionCtor: CrawlingCollectionClassConstructor<CrawlingCollection<ElementType>, ElementType> = CrawlingCollection<ElementType>
+	): CrawlingCollection<ElementType> {
+		const successfullyCollections = collections.filter(collection => collection._property.success);
+		const allMergedContext = this.getMergedContexts(collections.map(collection => collection._context));
+
+		if (successfullyCollections.length === 0) {
+			return CrawlingCollection._baseCreateWithError('no successful collection was given', allMergedContext, collectionCtor) as CrawlingCollection<ElementType>
+		}
+
+		const mergedContext = this.getMergedContexts(successfullyCollections.map(collection => collection._context));
+
+		return CrawlingCollection._baseCreateWithValue(
+			successfullyCollections.map(c => {
+				const collection = c as EnsuredSuccess<CrawlingCollection<ElementType>, ElementType[]>;
+				return collection._property.value;
+			}).flat(),
+			mergedContext,
+			collectionCtor,
+		) as CrawlingCollection<ElementType>;
+	}
+
 	getFirst(ctor: CrawlingBaseClassConstructor<CrawlingBase<ItemType>, ItemType> = CrawlingBase<ItemType>) {
 		return this.getItem(0, ctor);
 	}

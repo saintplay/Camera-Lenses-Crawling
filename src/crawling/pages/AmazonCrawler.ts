@@ -6,7 +6,7 @@ import { CrawlingText } from "../models/CrawlingText";
 import { PageCrawler } from "./PageCrawler";
 
 export class AmazonCrawler extends PageCrawler {
-	crawlLensDescription(): Partial<CrawleableLensDescription> {
+	crawlLensDescription(): Promise<CrawleableLensDescription> {
 		const brand = CrawlingElements
 			.getBySelector('#productOverview_feature_div table td.a-span3 span', 'brand')
 			.findByTextContent(/^Brand$/gm)
@@ -87,13 +87,12 @@ export class AmazonCrawler extends PageCrawler {
 			.toWeight()
 			.toGrams();
 
-		return {
+		return Promise.resolve({
 			brand,
 			focalLength,
 			maximumAperture,
 			weightGR,
 			amazonLink: CrawlingBase._baseCreateWithValue(window.location.href, {}),
-		}
-
+		})
 	}
 }

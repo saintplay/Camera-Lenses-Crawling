@@ -1,7 +1,9 @@
 import { AllowList, getAllowlistItem, MatchingStyle } from "../../data/data";
+import { readTextFromTableImage } from "../../genai/vision";
 import { escapeForRegex } from "../utils";
 import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
 import { CrawlingBoolean } from "./CrawlingBoolean";
+import { CrawlingElement } from "./CrawlingDom";
 import { CrawlingNumber } from "./CrawlingNumber";
 import { CrawlingDistance, CrawlingWeight } from "./CrawlingUnit";
 
@@ -177,6 +179,27 @@ export class CrawlingTexts extends CrawlingCollection<string> {
 
     static createWithError(error: string, context: CrawlingContext) {
         return CrawlingTexts.baseCreateWithError(error, context) as CrawlingTexts;
+    }
+
+    static async fromTableImage(element: CrawlingElement): Promise<CrawlingTexts> {
+		if (!element._property.success) return CrawlingTexts.createWithError(element._property.error, element._context);
+
+        const src = element._property.value.getAttribute('src')
+
+        if (!src) return CrawlingTexts.createWithError(`element "${element._property.value.tagName}" did not have a src attribute`, element._context);
+
+        try {
+            const textResult = await readTextFromTableImage(src)
+            console.log('Extracted text from image with genAI')
+            console.log(textResult)
+            return CrawlingTexts.createWithValue(textResult.split('\n'), element._context);
+        } catch (error) {
+            return CrawlingTexts.createWithError(String(error), element._context);
+        }
+    }
+
+    static concatTextSuccessfulls(collections: CrawlingTexts[]) {
+        return super.concatSuccessfulls(collections, CrawlingTexts) as CrawlingTexts;
     }
 
     getFirst() {

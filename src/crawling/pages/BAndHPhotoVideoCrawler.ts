@@ -8,7 +8,7 @@ import { CrawlingText, CrawlingTexts } from "../models/CrawlingText";
 import { PageCrawler } from "./PageCrawler";
 
 export class BAndHPhotoVideoCrawler extends PageCrawler {
-	crawlLensDescription(): CrawleableLensDescription {
+	crawlLensDescription(): Promise<CrawleableLensDescription> {
 		const brand = CrawlingElements
 			.getBySelector('[data-selenium=productTitle]', 'brand')
 			.getFirst()
@@ -229,7 +229,7 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.extractWithRegExp(/\$(\d+(?:\.\d+)?)$/gm, 1)
 			.toNumber();
 
-		return {
+		return Promise.resolve({
 			brand,
 			line,
 			mountSensorOptions,
@@ -245,7 +245,7 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			currentPrice,
 			fullPrice,
 			bhPhotoVideoLink: CrawlingBase._baseCreateWithValue(window.location.href, {}),
-		}
+		})
 
 	}
 }

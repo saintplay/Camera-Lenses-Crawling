@@ -7,7 +7,7 @@ import { CrawlingText } from "../models/CrawlingText";
 import { PageCrawler } from "./PageCrawler";
 
 export class FujifilmCrawler extends PageCrawler {
-	crawlLensDescription(): Partial<CrawleableLensDescription> {
+	crawlLensDescription(): Promise<CrawleableLensDescription> {
 		const brand = CrawlingElements
 			.getBySelector('.elementor-shortcode table td.column-1', 'brand')
 			.findByTextContent(/^Type$/gm)
@@ -197,7 +197,7 @@ export class FujifilmCrawler extends PageCrawler {
 			.extractWithRegExp(/(\d+(?:\.\d+)?)\g$/gm, 1)
 			.toNumber();
 
-		return {
+		return Promise.resolve({
 			brand,
 			line,
 			//mountSensorOptions, // Does not appear on fuji spec page.
@@ -213,7 +213,6 @@ export class FujifilmCrawler extends PageCrawler {
 			//currentPrice, // Does not appear on fuji spec page.
 			//fullPrice, // Does not appear on fuji spec page.
 			productLink: CrawlingBase._baseCreateWithValue(window.location.href, {}),
-		}
-
+		})
 	}
 }

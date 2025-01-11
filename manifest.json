@@ -3,7 +3,7 @@
 	"description": "Retrieve Lens specs from multiple websites",
 	"version": "1.0",
 	"manifest_version": 3,
-	"permissions": ["activeTab", "scripting"],
+	"permissions": ["activeTab", "scripting", "storage"],
 	"action": {
 	  "default_popup": "dist/popup.html",
 	  "default_icon": "icon.png"

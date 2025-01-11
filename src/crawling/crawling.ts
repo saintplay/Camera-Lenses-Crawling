@@ -13,7 +13,7 @@ export const CRAWLABLE_SITES: [RegExp, PageCrawler][] = [
 ]
 
 // TODO: This merged/multiple description logic should be in the popup code
-export function crawlLensDescription(): LensDescription {
+export async function crawlLensDescription(): Promise<LensDescription> {
     const matchedSite = CRAWLABLE_SITES.find(([regExpSite]) => regExpSite.test(window.location.hostname))
 
     if (!matchedSite) {
@@ -22,7 +22,7 @@ export function crawlLensDescription(): LensDescription {
     
     const [, pageCrawler] = matchedSite;
 
-    const capturedLensDescription = pageCrawler.crawlLensDescription()
+    const capturedLensDescription = await pageCrawler.crawlLensDescription()
 
     // Log errors in the site side
     Object.values(capturedLensDescription).forEach((descriptor) => {

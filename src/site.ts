@@ -20,7 +20,7 @@ const FULFILLED_REQUEST_IDS: {
     [requestId: string]: boolean;
 } = {};
 
-listenToEvents((event) => {
+listenToEvents(async (event) => {
     const { type } = event;
 
     if (type === "OPTION_CHANGED") {
@@ -39,7 +39,7 @@ listenToEvents((event) => {
         if (FULFILLED_REQUEST_IDS[newRequestId]) return;
 
         try {
-            const lensDesription = crawlLensDescription();
+            const lensDesription = await crawlLensDescription();
 
             console.log("Lens Specs Info Crawled");
             console.log(lensDesription);
@@ -60,7 +60,7 @@ listenToEvents((event) => {
         if (FULFILLED_REQUEST_IDS[requestId]) return;
 
         try {
-            const lensDesription = crawlLensDescription();
+            const lensDesription = await crawlLensDescription();
 
             if (!descriptionMatchesIdentifier(lensDesription, lensIdentifier)) {
                 console.log("More Lens Specs Info Skipped")
@@ -69,7 +69,7 @@ listenToEvents((event) => {
             } else {
                 console.log("Mores Lens Specs Info Crawled");
                 console.log(lensDesription);
-    
+
                 sendMessageToExtension({ type: "MORE_CRAWL_RESPONSE", success: true, lensDesription })
             }
 
