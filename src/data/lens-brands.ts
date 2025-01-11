@@ -76,7 +76,7 @@ export const BRANDS_DATA: {
 			"Iberit": {},
 			"Ibelux": {}
 		},
-	},
+},
 	"Lensbaby": {
 		lines: {
 			"Edge": {},

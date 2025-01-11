@@ -79,20 +79,23 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		}
 	}
 
-	static useFirst<ItemType>(crawlingEntities: CrawlingBase<ItemType>[]): CrawlingBase<ItemType> {
+	static useFirst<ItemType>(
+		crawlingEntities: CrawlingBase<ItemType>[],
+		ctor: CrawlingBaseClassConstructor<CrawlingBase<ItemType>, ItemType> = CrawlingBase<ItemType>,
+	): CrawlingBase<ItemType> {
 		const mergedContext = this.getMergedContexts(crawlingEntities.map(c => c._context));
-		
+
 		if (crawlingEntities.length == 0) {
-			return CrawlingBase._baseCreateWithError<ItemType>('trying to useFirst with no elements', mergedContext)
+			return CrawlingBase._baseCreateWithError<ItemType>('trying to useFirst with no elements', mergedContext, ctor)
 		}
-		
+
 		for (const crawl of crawlingEntities) {
 			if (crawl._property.success) {
 				return crawl;
 			}
 		}
 
-		return CrawlingBase._baseCreateWithError<ItemType>('trying to useFirst, but no successful crawl provided', mergedContext)
+		return CrawlingBase._baseCreateWithError<ItemType>('trying to useFirst, but no successful crawl provided', mergedContext, ctor)
 	}
 
 	static unionByValue<ItemType, T extends CrawlingCollection<ItemType> = CrawlingCollection<ItemType>>(...crawlingEntities: T[]): T {
@@ -112,7 +115,7 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		}
 
 		const mergedContext = CrawlingBase.getMergedContexts(crawlingEntities.map(collection => collection._context));
-		
+
 		return CrawlingCollection.baseCreateWithValue(finalCollection, mergedContext) as T;
 	}
 
@@ -203,6 +206,16 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 		throw new Error('unreachable code')
 	}
 
+	to<ReturnType>(
+		makeCb: (crawlingObject: EnsuredSuccess<this, NativeType>) => ReturnType,
+	): CrawlingBase<ReturnType> {
+		if (this.hadError()) {
+			return new CrawlingBase<ReturnType>(this._property, this._context);
+		}
+
+		return CrawlingBase._baseCreateWithValue(makeCb(this as EnsuredSuccess<this, NativeType>), this._context);
+	}
+
 	getErrorMessage() {
 		if (this._property.success) return "";
 
@@ -252,5 +265,20 @@ export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {
 		}
 
 		return CrawlingCollection._baseCreateWithValue<NewNativeType[]>(crawlArray.map(crawl => (crawl as EnsuredSuccess<typeof crawl, NewNativeType>)._property.value), this._context, collectionCtor) as CrawlingCollection<NewNativeType>;
+	}
+
+	/**
+	 * Use .mapElements instead if you need to change the collection type (default: CrawlingCollection)
+	 */
+	filter(
+		filterCb: (element: EnsuredSuccess<CrawlingBase<ItemType>, ItemType>) => boolean,
+		collectionCtor: CrawlingCollectionClassConstructor<CrawlingCollection<ItemType>, ItemType> = CrawlingCollection<ItemType>
+	) {
+		if (!this._property.success) return CrawlingCollection._baseCreateWithError<ItemType[]>(this._property.error, this._context, collectionCtor) as CrawlingCollection<ItemType>;
+
+		const filteredArray = this._property.value.filter(
+			(element) => filterCb(CrawlingBase._baseCreateWithValue(element, this._context) as EnsuredSuccess<CrawlingBase<ItemType>, ItemType>))
+
+		return CrawlingCollection._baseCreateWithValue<ItemType[]>(filteredArray, this._context, collectionCtor) as CrawlingCollection<ItemType>;
 	}
 }

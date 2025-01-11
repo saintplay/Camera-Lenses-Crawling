@@ -1,6 +1,6 @@
-import { keyedListToSortedAllowlist } from "../../data/data";
+import { isInAllowlist, keyedListToSortedAllowlist } from "../../data/data";
 import { BRANDS_DATA, LENS_BRANDS_ALLOWLIST, LensBrand } from "../../data/lens-brands";
-import { LENS_MOUNT_ALLOWLIST, LensMount, SENSOR_COVERAGE_ALLOWLIST, SensorCoverage } from "../../data/optics";
+import { SEEKING_LENS_MOUNT_ALLOWLIST, SeekingLensMount, SENSOR_COVERAGE_ALLOWLIST, SensorCoverage } from "../../data/optics";
 import { ApertureLimit, CrawleableLensDescription, FocalLength, MountSensorOption } from "../../types";
 import { CrawlingBase } from "../models/CrawlingBase";
 import { CrawlingElements } from "../models/CrawlingDom";
@@ -13,14 +13,15 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getBySelector('[data-selenium=productTitle]', 'brand')
 			.getFirst()
 			.getTextContent()
+			.extractWithRegExp(/^(.+?)\s/gm, 1)
 			.extractWithAllowlist(LENS_BRANDS_ALLOWLIST)
 
 		const linesAllowlist = CrawlingBase
 			.make<[LensBrand]>([brand])
 			(([brand]) => {
 				return keyedListToSortedAllowlist(BRANDS_DATA[brand._property.value].lines)
-			})
-
+			});
+		
 		const line = CrawlingElements
 			.getBySelector('[data-selenium=productTitle]', 'line')
 			.getFirst()
@@ -35,40 +36,40 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 			.getTextContent()
 			.extractWithAllowlist(SENSOR_COVERAGE_ALLOWLIST)
 
-		//const bulletPointSensorCoverage = CrawlingElements
-		//	.getBySelector('BCOMMIT', 'bullet point sensorCoverage')
-		//	.findByTextContent(/BCOMMIT/)
-		//	.getTextContent()
-		//	.extractWithRegExp(/BCOMMIT/, 1)
+		const bulletPointSensorCoverage = CrawlingElements
+			.getBySelector('[data-selenium=sellingPointsListItem]', 'bulletPointSensorCoverage')
+			.getFirst()
+			.getTextContent()
+			.extractWithAllowlist(SENSOR_COVERAGE_ALLOWLIST)
 
-		//const sensorCoverage = CrawlingBase
-		//	.useFirst([tableSensorCoverage, bulletPointSensorCoverage], { throwIfDifferentValues: true });
-
-		const sensorCoverage = tableSensorCoverage;
+		const sensorCoverage = CrawlingBase
+			// Bullet point has the priority
+			.useFirst([bulletPointSensorCoverage, tableSensorCoverage, ]);
 
 		const tableLensMount = CrawlingElements
 			.getBySelector('[data-selenium=specsItemGroupTableColumnLabel]', 'lensMount')
 			.findByTextContent(/^Lens Mount$/gm)
 			.getNextElementSibiling()
 			.getTextContent()
-			.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true)
+			.extractWithAllowlist(SEEKING_LENS_MOUNT_ALLOWLIST, 'exact')
 
-		const availableLensMounts = ((CrawlingElements
+		const availableLensMounts = (((CrawlingElements
 			.getBySelector('[data-selenium=itemOptionsGroupHeader]', 'other lens mounts')
 			.findByTextContent(/^Lens Mount$/gm)
 			.getParent()
 			.getBySelector('[data-selenium=optionsGroupingName]')
 			.ifError<Element[]>([], (crawl) => crawl._property.value, CrawlingElements) as CrawlingElements)
 			.mapElements<string>((element) => element.getTextContent(), CrawlingTexts) as CrawlingTexts)
-			.map<LensMount>((mountCandidate) => mountCandidate.extractWithAllowlist(LENS_MOUNT_ALLOWLIST, true))
+			.filter((text) => isInAllowlist(SEEKING_LENS_MOUNT_ALLOWLIST, text._property.value, 'exact'), CrawlingTexts) as CrawlingTexts)
+			.map<SeekingLensMount>((mountCandidate) => mountCandidate.extractWithAllowlist(SEEKING_LENS_MOUNT_ALLOWLIST, 'exact'))
 
 		const allLensMounts = CrawlingBase
-			.unionByValue<LensMount>(tableLensMount.toCollection(), availableLensMounts)
+			.unionByValue<SeekingLensMount>(tableLensMount.toCollection(), availableLensMounts)
 		// TODO: sort to get the same order
 		//.sortByValue()
 
 		const mountSensorOptions = CrawlingBase
-			.make<[SensorCoverage, LensMount[]]>([sensorCoverage, allLensMounts])
+			.make<[SensorCoverage, SeekingLensMount[]]>([sensorCoverage, allLensMounts])
 			(([coverage, mounts]): MountSensorOption[] => mounts._property.value.map(
 				(mount) => ({ sensorCoverage: coverage._property.value, lensMount: mount })
 			))

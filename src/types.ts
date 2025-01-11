@@ -1,3 +1,5 @@
+import { cloneDeep, isEqual } from "lodash";
+
 import { CrawlingBase } from "./crawling/models/CrawlingBase";
 import { LensBrand } from "./data/lens-brands";
 import { LensMount, SensorCoverage } from "./data/optics";
@@ -52,6 +54,7 @@ export type ComplementaryDescription = ComplementaryOpticalDescription & StoreIt
 
 export type LensDescription = BasicLensIdentifier & Partial<ComplementaryDescription>;
 
+// TODO: Stop making this required for every single field, instead default to === in the caller function
 const LENS_DESCRIPTION_COMPARER: { [property in keyof Required<LensDescription>]: (v1: NonNullable<LensDescription[property]>, v2: NonNullable<LensDescription[property]>) => boolean } = {
 	brand: (v1, v2) => v1 == v2,
 	focalLength: (v1, v2) => {
@@ -82,8 +85,7 @@ const LENS_DESCRIPTION_COMPARER: { [property in keyof Required<LensDescription>]
 		throw new Error('unreachable code')
 	},
 	line: (v1, v2) => v1 === v2,
-	// TODO: Implement the correct comparer
-	mountSensorOptions: (v1, v2) => v1 === v2,
+	mountSensorOptions: (v1, v2) => isEqual(v1, v2),
 	// TODO: Implement the correct comparer
 	minimumAperture: (v1, v2) => v1 === v2,
 	minimumFocusDistanceCM: (v1, v2) => v1 === v2,
@@ -98,6 +100,11 @@ const LENS_DESCRIPTION_COMPARER: { [property in keyof Required<LensDescription>]
 	bhPhotoVideoLink:(v1, v2) => v1 === v2,
 	adoramaLink:(v1, v2) => v1 === v2,
 	amazonLink:(v1, v2) => v1 === v2,
+}
+
+const LENS_DESCRIPTION_MERGER: { [property in keyof Partial<LensDescription>]: (v1: NonNullable<LensDescription[property]>, v2: NonNullable<LensDescription[property]>) => NonNullable<LensDescription[property]> } = {
+	currentPrice: (v1, v2) => v1 < v2 ? v1 : v2,
+	fullPrice: (v1, v2) => v1 > v2 ? v1 : v2,
 }
 
 export type CrawleableLensDescription = {
@@ -146,6 +153,11 @@ export const descriptionMatchesIdentifier = (lensDescription: LensDescription, l
 	for (const prop in originalIdentifier) {
 		const property = prop as keyof BasicLensIdentifier;
 		const value = originalIdentifier[property];
+
+		if (typeof originalIdentifier[property] === 'undefined' || typeof lensIdentifier[property] === 'undefined') {
+			return false;
+		}
+		
 		if (!(LENS_DESCRIPTION_COMPARER[property] as (v1: typeof value, v2: typeof value) => boolean)(originalIdentifier[property], lensIdentifier[property])) {
 			return false;
 		}
@@ -154,7 +166,9 @@ export const descriptionMatchesIdentifier = (lensDescription: LensDescription, l
 	return true;
 }
 
-export const mergeLensDescriptions = (...lensDescriptions: LensDescription[]): { mergeErrors: { field: string, values: string[] }[]; lensDescription: LensDescription } => {
+export type MergeValues = { field: string, values: string[] }[]
+
+export const mergeLensDescriptions = (mergeValues: MergeValues, ...lensDescriptions: LensDescription[]): { mergeValues: MergeValues; lensDescription: LensDescription } => {
 	if (lensDescriptions.length === 0) {
 		throw new Error('no lens descriptions items to merge');
 	}
@@ -175,7 +189,7 @@ export const mergeLensDescriptions = (...lensDescriptions: LensDescription[]): {
 		maximumAperture: basicLensIdentifier.maximumAperture,
 	}
 
-	const mergeErrors: { field: string, values: string[] }[] = [];
+	const newMergeValues: MergeValues = cloneDeep(mergeValues);
 
 	for (const lensDescription of lensDescriptions) {
 		for (const prop in lensDescription) {
@@ -184,16 +198,21 @@ export const mergeLensDescriptions = (...lensDescriptions: LensDescription[]): {
 			const value = lensDescription[property];
 			const finalValue = finalLensDescription[property];
 
+			if (newMergeValues.findIndex(merge => merge.field === property) === -1) {
+				newMergeValues.push({ field: property, values: [JSON.stringify(value)] });
+			}
+
 			if (typeof value !== 'undefined') {
 				if (typeof finalValue === 'undefined') {
 					(finalLensDescription[property] as typeof value) = value;
 				} else {
 					if (!(LENS_DESCRIPTION_COMPARER[property] as (v1: typeof value, v2: typeof value) => boolean)(finalValue, value)) {
-						const mergeError = mergeErrors.find(error => error.field === property);
-						if (mergeError) {
-							mergeError.values.push(JSON.stringify(value));
-						} else {
-							mergeErrors.push({ field: property, values: [JSON.stringify(value)] });
+						(finalLensDescription[property] as typeof value) = (LENS_DESCRIPTION_MERGER[property] as (v1: typeof value, v2: typeof value) => typeof value)?.(finalValue, value) ?? value;
+
+						
+						const merge = newMergeValues.find(merge => merge.field === property);
+						if (merge) {
+							merge.values.push(JSON.stringify(value));
 						}
 					}
 				}
@@ -202,5 +221,5 @@ export const mergeLensDescriptions = (...lensDescriptions: LensDescription[]): {
 		}
 	}
 
-	return { lensDescription: finalLensDescription, mergeErrors };
+	return { lensDescription: finalLensDescription, mergeValues: newMergeValues };
 }

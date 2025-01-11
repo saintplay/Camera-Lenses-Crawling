@@ -1,4 +1,5 @@
-import { AllowList } from "../../data/data";
+import { AllowList, getAllowlistItem, MatchingStyle } from "../../data/data";
+import { escapeForRegex } from "../utils";
 import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
 import { CrawlingBoolean } from "./CrawlingBoolean";
 import { CrawlingNumber } from "./CrawlingNumber";
@@ -93,8 +94,7 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
         return CrawlingTexts.createWithError(`text ${this._property.value} did not match with any regexp`, this._context);
     }
 
-
-    extractWithAllowlist<K extends string = string>(allowlist: AllowList<K> | CrawlingBase<AllowList<K>>, matchWholeWords = false): CrawlingText<K> {
+    extractWithAllowlist<K extends string = string>(allowlist: AllowList<K> | CrawlingBase<AllowList<K>>, matchStyle: MatchingStyle = 'anywhere'): CrawlingText<K> {
         if (!this._property.success) return CrawlingText.createWithError(this._property.error, this._context);
 
         if (allowlist instanceof CrawlingBase) {
@@ -105,33 +105,16 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
             (allowlist as EnsuredSuccess<typeof allowlist, AllowList<K>>)._property.value :
             allowlist;
 
-        const lowercaseText = this._property.value.toLowerCase();
+        const foundedInAllowlistItem = getAllowlistItem(actualAllowlist, this._property.value, matchStyle)
 
-        const lowercaseFlattenAllowList = actualAllowlist.map(i => [
-            i.name.toLowerCase(),
-            ...(i.aliases ? i.aliases.map(a => a.toLowerCase()) : [])
-        ])
-
-        for (const index in lowercaseFlattenAllowList) {
-            const allowNameAndAliases = lowercaseFlattenAllowList[index]
-
-            let founded: boolean;
-            if (matchWholeWords) {
-                founded = Boolean(allowNameAndAliases.find(txt => new RegExp(`\\b${txt}\\b`, 'gm').test(lowercaseText)))
-            } else {
-                founded = Boolean(allowNameAndAliases.find(txt => lowercaseText.includes(txt)))
-            }
-
-            if (founded) {
-                // Use the original allowList since it was not transformed to lowercase
-                return CrawlingText.createWithValue<K>(actualAllowlist[index].name, this._context)
-            }
+        if (foundedInAllowlistItem) {
+            return CrawlingText.createWithValue<K>(foundedInAllowlistItem.name, this._context)   
         }
 
-        return CrawlingText.createWithError('element not found with allowlist', this._context);
+        return CrawlingText.createWithError(`element "${this._property.value}" not found with allowlist`, this._context);
     }
 
-    subtractLiterals(texts: string[] | CrawlingCollection<string>): CrawlingText {
+    subtractLiterals<T extends string>(texts: T[] | CrawlingCollection<T>): CrawlingText {
         if (!this._property.success) return CrawlingText.createWithError(this._property.error, this._context);
 
         if (texts instanceof CrawlingCollection) {
@@ -139,15 +122,15 @@ export class CrawlingText<TextType extends string = string> extends CrawlingBase
         }
 
         const textsToSubstract = texts instanceof CrawlingCollection ?
-            (texts as EnsuredSuccess<typeof texts, string[]>)._property.value :
+            (texts as EnsuredSuccess<typeof texts, T[]>)._property.value :
             texts;
 
         const reducedText = textsToSubstract.reduce(
             (acc, curr) => {
-                const regExpEscapedText = curr.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+                const regExpEscapedText = escapeForRegex(curr)
                 return acc.replace(new RegExp(regExpEscapedText, 'gmi'), '')
             },
-            this._property.value
+            this._property.value as string
         )
 
         return CrawlingText.createWithValue(reducedText, this._context)
@@ -206,5 +189,17 @@ export class CrawlingTexts extends CrawlingCollection<string> {
 
     map<NewNativeType>(mapCb: (element: EnsuredSuccess<CrawlingText, string>) => CrawlingBase<NewNativeType>): CrawlingCollection<NewNativeType> {
         return super.map(mapCb as (element: EnsuredSuccess<CrawlingBase<string>, string>) => CrawlingBase<NewNativeType>, CrawlingText);
+    }
+
+    findByRegExp(regExp: RegExp): CrawlingText {
+		if (!this._property.success) return CrawlingText.createWithError(this._property.error, this._context);
+
+        for (const text of this._property.value) {
+            if (regExp.test(text)) {
+                return CrawlingText.createWithValue(text, this._context);
+            }
+        }
+
+        return CrawlingText.createWithError(`No text found by RegExp "${regExp}"`, this._context);
     }
 }

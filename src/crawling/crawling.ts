@@ -2,12 +2,14 @@ import { LensDescription } from "../types";
 import { AmazonCrawler } from "./pages/AmazonCrawler";
 import { BAndHPhotoVideoCrawler } from "./pages/BAndHPhotoVideoCrawler";
 import { FujifilmCrawler } from "./pages/FujifilmCrawler";
+import { MeikeCrawler } from "./pages/MeikeCrawler";
 import { PageCrawler } from "./pages/PageCrawler";
 
 export const CRAWLABLE_SITES: [RegExp, PageCrawler][] = [
     [/(?:www)?\.?amazon\.com/, new AmazonCrawler()],
     [/(?:www)?\.?bhphotovideo\.com/, new BAndHPhotoVideoCrawler()],
-    [/(?:www)?\.?fujifilm-x\.com/, new FujifilmCrawler()]
+    [/(?:www)?\.?fujifilm-x\.com/, new FujifilmCrawler()],
+    [/(?:www)?\.?meikeglobal\.com/, new MeikeCrawler()],
 ]
 
 // TODO: This merged/multiple description logic should be in the popup code

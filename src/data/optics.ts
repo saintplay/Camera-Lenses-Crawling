@@ -20,7 +20,9 @@ export const SENSOR_COVERAGE_DATA: {
 		aliases: ['s35', 'super-35'],
 		priorityIndex: 1
 	},
-	"Full-Frame": {}
+	"Full-Frame": {
+		aliases: ['ff', 'Full Frame']
+	}
 }
 
 export const SENSOR_COVERAGE_ALLOWLIST = keyedListToSortedAllowlist<SensorCoverage>(SENSOR_COVERAGE_DATA);
@@ -59,15 +61,36 @@ export const LENS_MOUNT_DATA: {
 	"F": { technologies: ['SLR'] },
 	"K": { technologies: ['SLR'] },
 	"M": { technologies: ['SLR'], aliases: ['vm', 'leica m'] },
-	"E": { technologies: ['mirrorless'], aliases: ['fe', 'nex', 'nex-e'] },
+	"E": { technologies: ['mirrorless'], aliases: ['fe', 'nex', 'nex-e', 'Sony E'] },
 	"X": { technologies: ['mirrorless'], aliases: ["fujifilm x", 'fx'] },
 	"L": { technologies: ['mirrorless'] },
 	"Z": { technologies: ['mirrorless'] },
-	"EF-M": { technologies: ['mirrorless'], aliases: ['eos-m'] },
+	"EF-M": { technologies: ['mirrorless'], aliases: ['eos-m', 'efm', 'Canon EF-M'] },
 	"RF": { technologies: ['mirrorless'], aliases: ['eos-r', 'rf-s'] },
-	"MFT": { technologies: ['SLR', 'mirrorless'], aliases: ['m43'] },
+	"MFT": { technologies: ['SLR', 'mirrorless'], aliases: ['m43', 'Micro Four Thirds'] },
 	"T": { technologies: ['SLR'] },
 	"CX": { technologies: ['SLR'], aliases: ['nikon-cx'] },
 }
 
 export const LENS_MOUNT_ALLOWLIST = keyedListToSortedAllowlist<LensMount>(LENS_MOUNT_DATA);
+
+// Lens mounts that have great compatibility to be used with modern mirrorless cameras (with adaptors)
+// These are mostly DSLR or have no electronics at all
+export const SEEKING_LENS_MOUNTS = [
+	"M42",
+	"M39",
+	"PL",
+	"EF",
+	"F",
+	"K",
+	"M",
+	"X", // The only Mirrorless mount I personally seek, because I own a Fuji
+] as const
+
+export type SeekingLensMount = typeof SEEKING_LENS_MOUNTS[number];
+
+export const SEEKING_LENS_MOUNT_ALLOWLIST = keyedListToSortedAllowlist<SeekingLensMount>(
+	Object.fromEntries(
+		Object.entries(LENS_MOUNT_DATA).
+			filter(([mount]) => SEEKING_LENS_MOUNTS.includes(mount as SeekingLensMount))
+	));

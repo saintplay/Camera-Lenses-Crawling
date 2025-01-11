@@ -13,7 +13,8 @@
 			"matches": [
 				"https://*.amazon.com/*",
 				"https://*.bhphotovideo.com/*",
-				"https://*.fujifilm-x.com/*"
+				"https://*.fujifilm-x.com/*",
+				"https://*.meikeglobal.com/*"
 			],
 			"js": ["dist/site.umd.js"]
 		}

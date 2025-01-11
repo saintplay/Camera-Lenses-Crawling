@@ -1,5 +1,5 @@
 import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingCollectionClassConstructor, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
-import { CrawlingText } from "./CrawlingText";
+import { CrawlingText, CrawlingTexts } from "./CrawlingText";
 
 export class CrawlingElement extends CrawlingBase<Element> {
     constructor(property: CrawleableProperty<Element>, context: CrawlingContext) {
@@ -16,7 +16,7 @@ export class CrawlingElement extends CrawlingBase<Element> {
 
     getBySelector(selectorPath: string): CrawlingElements {
         if (!this._property.success) return CrawlingElements.createWithError(`selector path "${selectorPath}" did not match anything`, this._context);
-        
+
         const elements = this._property.value.querySelectorAll(selectorPath);
         const newContext = { ...this._context, selectorPath }
 
@@ -57,6 +57,19 @@ export class CrawlingElement extends CrawlingBase<Element> {
 
         return CrawlingElement.createWithValue(next, this._context);
     }
+
+    getAllTextNodesAsText(): CrawlingTexts {
+        if (!this._property.success) return CrawlingTexts.createWithError(this._property.error, this._context) ;
+
+        /** @see https://stackoverflow.com/a/10730777 */
+        const textNodes: Text[] = []
+        const walker = document.createTreeWalker(this._property.value, NodeFilter.SHOW_TEXT)
+        while (walker.nextNode()) {
+            textNodes.push(walker.currentNode as Text)
+        }
+
+        return CrawlingTexts.createWithValue(textNodes.map(node => node.wholeText), this._context)
+    }
 }
 
 export class CrawlingElements extends CrawlingCollection<Element> {
@@ -64,7 +77,11 @@ export class CrawlingElements extends CrawlingCollection<Element> {
         super(property, context);
     }
 
-    static createWithValue(value: Element[], context: CrawlingContext) {
+    static createWithValue(value: Element[], context: CrawlingContext, { errorOnEmpty }: { errorOnEmpty?: boolean } = {}) {
+        if (errorOnEmpty && value.length === 0) {
+            return CrawlingElements.baseCreateWithError('tried to create elements collection with zero elements', context) as CrawlingElements;
+        }
+
         return CrawlingElements.baseCreateWithValue(value, context) as CrawlingElements;
     }
 
@@ -72,11 +89,11 @@ export class CrawlingElements extends CrawlingCollection<Element> {
         return CrawlingElements.baseCreateWithError(error, context) as CrawlingElements;
     }
 
-    static getBySelector(selectorPath: string, contentContext?: string): CrawlingElements {
+    static getBySelector(selectorPath: string, contentContext?: string, { errorOnEmpty }: { errorOnEmpty?: boolean } = {}): CrawlingElements {
         const elements = document.querySelectorAll(selectorPath);
         const newContext = { selectorPath, content: contentContext }
 
-        return CrawlingElements.createWithValue(Array.from(elements), newContext);
+        return CrawlingElements.createWithValue(Array.from(elements), newContext, { errorOnEmpty });
     }
 
     findByTextContent(regExp: RegExp): CrawlingElement {

@@ -8,6 +8,7 @@ This is meant to be used with your own lens db table (google sheet, excel or any
 
 - <https://www.amazon.com/>
 - <https://www.bhphotovideo.com/>
-- <https://fujifilm-x.com/>
+- <https://www.fujifilm-x.com/>
+- <https://www.meikeglobal.com/>
 
 Adding more pages is very easy, as this project provides an internal api to crawl for elements, and getting lens information has very similar logic across all pages.

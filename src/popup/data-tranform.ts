@@ -3,6 +3,7 @@ import { groupBy } from "lodash";
 import { ApertureLimit, FocalLength, LensDescription, MountSensorOption } from "../types";
 
 function getMountSensorOptionsDescriptor(mountSensorOptions: MountSensorOption[]) {
+    // TODO: Ensure to sort options to always get the same string
     return Object.entries(
         groupBy(
             mountSensorOptions,
