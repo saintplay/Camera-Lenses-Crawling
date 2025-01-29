@@ -141,12 +141,6 @@ export class MeikeCrawler extends PageCrawler {
 
 		const sensorCoverage = CrawlingBase.useFirst([sensorCoverage1, sensorCoverage2])
 
-		CrawlingElements
-			.getBySelector('h1.product-title', 'sensorCoverage')
-			.getFirst()
-			.getTextContent()
-			.extractWithAllowlist(SENSOR_COVERAGE_ALLOWLIST, 'word-constrained')
-
 		const availableLensMounts = ((CrawlingElements
 			.getBySelector('span.options-selection__option-value-name', 'availableLensMounts')
 			.mapElements<string>(
@@ -198,7 +192,7 @@ export class MeikeCrawler extends PageCrawler {
 			.getBySelector('h1.product-title', 'macro')
 			.getFirst()
 			.getTextContent()
-			.matchesRegExp(/\bMacro\b/gmi)
+			.matchesRegExp(/\bAuto\s?Focus\b/gmi)
 
 		const filterSize1 = CrawlingElements
 			.getBySelector('.product-description table td', 'filterSize1')

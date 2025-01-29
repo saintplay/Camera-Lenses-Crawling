@@ -2,7 +2,7 @@ import { cloneDeep, isEqual } from "lodash";
 
 import { CrawlingBase } from "./crawling/models/CrawlingBase";
 import { LensBrand } from "./data/lens-brands";
-import { LensMount, SensorCoverage } from "./data/optics";
+import { LensMount, SENSOR_COVERAGE_DATA, SensorCoverage } from "./data/optics";
 
 export interface MountSensorOption {
 	lensMount: LensMount;
@@ -103,6 +103,29 @@ const LENS_DESCRIPTION_COMPARER: { [property in keyof Required<LensDescription>]
 }
 
 const LENS_DESCRIPTION_MERGER: { [property in keyof Partial<LensDescription>]: (v1: NonNullable<LensDescription[property]>, v2: NonNullable<LensDescription[property]>) => NonNullable<LensDescription[property]> } = {
+	mountSensorOptions: (v1, v2) => {
+		const newMountSensorOptions: MountSensorOption[] = [];
+
+		[...v1, ...v2].forEach((option, index) => {
+			const existentOption = newMountSensorOptions.find(opt => opt.lensMount === option.lensMount)
+			if (existentOption) {
+				// Replace sensor if this new option has higher priority
+				if (
+					typeof SENSOR_COVERAGE_DATA[option.sensorCoverage].priorityIndex === 'number' &&
+					(
+						typeof SENSOR_COVERAGE_DATA[existentOption.sensorCoverage].priorityIndex === 'undefined' ||
+						(SENSOR_COVERAGE_DATA[option.sensorCoverage].priorityIndex as number) > (SENSOR_COVERAGE_DATA[existentOption.sensorCoverage].priorityIndex as number)
+					)
+				) {
+					newMountSensorOptions[index] = option;
+				}
+			} else {
+				newMountSensorOptions.push(option)
+			}
+		})
+
+		return newMountSensorOptions;
+	},
 	currentPrice: (v1, v2) => v1 < v2 ? v1 : v2,
 	fullPrice: (v1, v2) => v1 > v2 ? v1 : v2,
 }

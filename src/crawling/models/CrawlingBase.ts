@@ -226,6 +226,15 @@ export class CrawlingBase<NativeType, P extends CrawleableProperty<NativeType> =
 
 		return finalMessage;
 	}
+
+	logToConsole(key?: string) {
+		if (typeof key !== 'undefined') {
+			console.log(key, this._property, this._context)
+		} else {
+			console.log(this._property, this._context)
+		}
+		return this;
+	}
 }
 
 export class CrawlingCollection<ItemType> extends CrawlingBase<ItemType[]> {

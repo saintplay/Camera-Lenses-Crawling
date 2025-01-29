@@ -3,6 +3,7 @@ import { AmazonCrawler } from "./pages/AmazonCrawler";
 import { BAndHPhotoVideoCrawler } from "./pages/BAndHPhotoVideoCrawler";
 import { FujifilmCrawler } from "./pages/FujifilmCrawler";
 import { MeikeCrawler } from "./pages/MeikeCrawler";
+import { SamyangCrawler } from "./pages/SamyangCrawler";
 import { PageCrawler } from "./pages/PageCrawler";
 
 export const CRAWLABLE_SITES: [RegExp, PageCrawler][] = [
@@ -10,6 +11,7 @@ export const CRAWLABLE_SITES: [RegExp, PageCrawler][] = [
     [/(?:www)?\.?bhphotovideo\.com/, new BAndHPhotoVideoCrawler()],
     [/(?:www)?\.?fujifilm-x\.com/, new FujifilmCrawler()],
     [/(?:www)?\.?meikeglobal\.com/, new MeikeCrawler()],
+    [/(?:www)?\.?samyangus\.com/, new SamyangCrawler()],
 ]
 
 // TODO: This merged/multiple description logic should be in the popup code

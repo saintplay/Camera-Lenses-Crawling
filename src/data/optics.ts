@@ -15,6 +15,7 @@ export const SENSOR_COVERAGE_DATA: {
 } = {
 	"APS-C": {
 		aliases: ['apsc'],
+		priorityIndex: 2
 	},
 	"Super35": {
 		aliases: ['s35', 'super-35'],
@@ -57,17 +58,17 @@ export const LENS_MOUNT_DATA: {
 	"M42": { technologies: ['SLR'] },
 	"M39": { technologies: ['SLR'] },
 	"PL": { technologies: ['SLR'] },
-	"EF": { technologies: ['SLR'], aliases: ['ef-s'] },
-	"F": { technologies: ['SLR'] },
-	"K": { technologies: ['SLR'] },
+	"EF": { technologies: ['SLR'], aliases: ['canon ef', 'ef-s'] },
+	"F": { technologies: ['SLR'], aliases: ['nikon f'] },
+	"K": { technologies: ['SLR'], aliases: ['pentax k'] },
 	"M": { technologies: ['SLR'], aliases: ['vm', 'leica m'] },
 	"E": { technologies: ['mirrorless'], aliases: ['fe', 'nex', 'nex-e', 'Sony E'] },
-	"X": { technologies: ['mirrorless'], aliases: ["fujifilm x", 'fx'] },
+	"X": { technologies: ['mirrorless'], aliases: ["fujifilm x", 'fuji x', 'fx'] },
 	"L": { technologies: ['mirrorless'] },
 	"Z": { technologies: ['mirrorless'] },
-	"EF-M": { technologies: ['mirrorless'], aliases: ['eos-m', 'efm', 'Canon EF-M'] },
+	"EF-M": { technologies: ['mirrorless'], aliases: ['eos-m', 'efm', 'Canon EF-M', 'canon m'] },
 	"RF": { technologies: ['mirrorless'], aliases: ['eos-r', 'rf-s'] },
-	"MFT": { technologies: ['SLR', 'mirrorless'], aliases: ['m43', 'Micro Four Thirds'] },
+	"MFT": { technologies: ['SLR', 'mirrorless'], aliases: ['m43', 'micro 4/3', 'Micro Four Thirds'] },
 	"T": { technologies: ['SLR'] },
 	"CX": { technologies: ['SLR'], aliases: ['nikon-cx'] },
 }
@@ -79,7 +80,7 @@ export const LENS_MOUNT_ALLOWLIST = keyedListToSortedAllowlist<LensMount>(LENS_M
 export const SEEKING_LENS_MOUNTS = [
 	"M42",
 	"M39",
-	"PL",
+	//"PL", // Great compatibility, but too expensive generally
 	"EF",
 	"F",
 	"K",

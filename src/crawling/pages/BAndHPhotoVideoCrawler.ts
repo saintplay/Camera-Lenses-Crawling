@@ -55,14 +55,14 @@ export class BAndHPhotoVideoCrawler extends PageCrawler {
 
 		const availableLensMounts = (((CrawlingElements
 			.getBySelector('[data-selenium=itemOptionsGroupHeader]', 'other lens mounts')
-			.findByTextContent(/^Lens Mount$/gm)
+			.findByTextContent(/^(?:Lens )?Mount$/gm)
 			.getParent()
 			.getBySelector('[data-selenium=optionsGroupingName]')
 			.ifError<Element[]>([], (crawl) => crawl._property.value, CrawlingElements) as CrawlingElements)
 			.mapElements<string>((element) => element.getTextContent(), CrawlingTexts) as CrawlingTexts)
 			.filter((text) => isInAllowlist(SEEKING_LENS_MOUNT_ALLOWLIST, text._property.value, 'exact'), CrawlingTexts) as CrawlingTexts)
 			.map<SeekingLensMount>((mountCandidate) => mountCandidate.extractWithAllowlist(SEEKING_LENS_MOUNT_ALLOWLIST, 'exact'))
-
+		
 		const allLensMounts = CrawlingBase
 			.unionByValue<SeekingLensMount>(tableLensMount.toCollection(), availableLensMounts)
 		// TODO: sort to get the same order

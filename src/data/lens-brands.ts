@@ -121,7 +121,9 @@ export const BRANDS_DATA: {
 		lines: {},
 	},
 	"Samyang": {
-		lines: {},
+		lines: {
+			"XP": {},
+		},
 	},
 	"Sigma": {
 		lines: {

@@ -1,7 +1,7 @@
 import { AllowList, getAllowlistItem, MatchingStyle } from "../../data/data";
 import { readTextFromTableImage } from "../../genai/vision";
 import { escapeForRegex } from "../utils";
-import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
+import { CrawleableProperty, CrawlingBase, CrawlingCollection, CrawlingCollectionClassConstructor, CrawlingContext, EnsuredSuccess } from "./CrawlingBase";
 import { CrawlingBoolean } from "./CrawlingBoolean";
 import { CrawlingElement } from "./CrawlingDom";
 import { CrawlingNumber } from "./CrawlingNumber";
@@ -212,6 +212,16 @@ export class CrawlingTexts extends CrawlingCollection<string> {
 
     map<NewNativeType>(mapCb: (element: EnsuredSuccess<CrawlingText, string>) => CrawlingBase<NewNativeType>): CrawlingCollection<NewNativeType> {
         return super.map(mapCb as (element: EnsuredSuccess<CrawlingBase<string>, string>) => CrawlingBase<NewNativeType>, CrawlingText);
+    }
+
+    /**
+     * Use .map instead if you don't need to change the collection type (default: CrawlingCollection)
+     */
+    mapTexts<NewNativeType>(
+        mapCb: (element: EnsuredSuccess<CrawlingText, string>) => CrawlingBase<NewNativeType>,
+        collectionCtor: CrawlingCollectionClassConstructor<CrawlingCollection<NewNativeType>, NewNativeType> = CrawlingCollection<NewNativeType>
+    ): CrawlingCollection<NewNativeType> {
+        return super.map<NewNativeType>(mapCb as (text: EnsuredSuccess<CrawlingBase<string>, string>) => CrawlingBase<NewNativeType>, CrawlingText, collectionCtor);
     }
 
     findByRegExp(regExp: RegExp): CrawlingText {

@@ -24,13 +24,14 @@ export function keyedListToSortedAllowlist<T extends string = string, I extends 
 	}))
 }
 
-export type MatchingStyle = 'anywhere' | 'word-constrained' | 'exact'
+export type MatchingStyle = 'anywhere' | 'word-constrained' | 'exact' | 'exact-trimmed'
 
 export function getAllowlistItem<T extends string = string>(allowlist: AllowList<T>, value: string, matchStyle: MatchingStyle = 'anywhere') {
 	const flattenAllowList = allowlist.map(i => [
 		i.name,
 		...(i.aliases ? i.aliases : [])
 	])
+
 
 	for (const index in flattenAllowList) {
 		const allowNameAndAliases = flattenAllowList[index];
@@ -46,7 +47,19 @@ export function getAllowlistItem<T extends string = string>(allowlist: AllowList
 			}
 		}
 		else if (matchStyle === 'exact') {
-			if (allowNameAndAliases.find(txt => new RegExp(`^${escapeForRegex(txt)}$`, 'gmi').test(value))) {
+			if (allowNameAndAliases.find(
+				txt => new RegExp(`^${escapeForRegex(txt)}$`, 'gmi').test(value) &&
+					new RegExp(`^${escapeForRegex(value)}$`, 'gmi').test(txt)
+			)) {
+				return allowlist[index];
+			}
+		}
+		else if (matchStyle === 'exact-trimmed') {
+
+			if (allowNameAndAliases.find(
+				txt => new RegExp(`^${escapeForRegex(txt)}$`, 'gmi').test(value.trim()) &&
+					new RegExp(`^${escapeForRegex(value.trim())}$`, 'gmi').test(txt)
+			)) {
 				return allowlist[index];
 			}
 		}

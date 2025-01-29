@@ -14,7 +14,8 @@
 				"https://*.amazon.com/*",
 				"https://*.bhphotovideo.com/*",
 				"https://*.fujifilm-x.com/*",
-				"https://*.meikeglobal.com/*"
+				"https://*.meikeglobal.com/*",
+				"https://*.samyangus.com/*"
 			],
 			"js": ["dist/site.umd.js"]
 		}
